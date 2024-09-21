@@ -1,6 +1,6 @@
 {
   "name": "benignware/wp-mediacontrols",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "wordpress-plugin",
   "license": "MIT",
   "description": "Consistent media controls across browsers",
@@ -52,6 +52,7 @@
   "require-dev": {
     "wptrt/theme-unit-test": "dev-master",
     "benignware/benignware-connect": ">=1.0.1",
+    "wpackagist-plugin/icon-fonts": ">=1.0.0",
     "wpackagist-plugin/instant-images": "^6.1.2",
     "wpackagist-theme/twentyseventeen": ">=2.9",
     "wpackagist-theme/twentytwentyone": "*",

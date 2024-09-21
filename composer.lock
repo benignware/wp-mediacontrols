@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4f80cbe1a4673b1bafdc2f1681005139",
+    "content-hash": "c0f8c1af575d847ff7f9ff3a2abbbb0f",
     "packages": [
         {
             "name": "composer/installers",
@@ -168,6 +168,24 @@
                 "reference": "v1.0.1"
             },
             "type": "wordpress-plugin"
+        },
+        {
+            "name": "wpackagist-plugin/icon-fonts",
+            "version": "1.0.0",
+            "source": {
+                "type": "svn",
+                "url": "https://plugins.svn.wordpress.org/icon-fonts/",
+                "reference": "tags/1.0.0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://downloads.wordpress.org/plugin/icon-fonts.1.0.0.zip"
+            },
+            "require": {
+                "composer/installers": "^1.0 || ^2.0"
+            },
+            "type": "wordpress-plugin",
+            "homepage": "https://wordpress.org/plugins/icon-fonts/"
         },
         {
             "name": "wpackagist-plugin/instant-images",

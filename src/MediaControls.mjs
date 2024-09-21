@@ -281,10 +281,14 @@ export default class MediaControls extends HTMLElement {
 
         :host::part(fullscreen-button)::before {
           content: var(--x-icon-expand, '⛶');
+          font-family: var(--x-icon-expand-font-family, var(--x-icon-font-family, monospace));
+          font-weight: var(--x-icon-expand-font-weight, var(--x-icon-font-weight, normal));
         }
 
         :host(:state(--fullscreen))::part(fullscreen-button)::before {
           content: var(--x-icon-collapse, '⛶');
+          font-family: var(--x-icon-collapse-font-family, var(--x-icon-font-family, monospace));
+          font-weight: var(--x-icon-collapse-font-weight, var(--x-icon-font-weight, normal));
         }
 
         /* play button */
@@ -293,10 +297,14 @@ export default class MediaControls extends HTMLElement {
 
         :host(:state(--paused))::part(play-button):before {
           content: var(--x-icon-play, "▶");
+          font-family: var(--x-icon-play-font-family, var(--x-icon-font-family, monospace));
+          font-weight: var(--x-icon-play-font-weight, var(--x-icon-font-weight, normal));
         }
 
         :host::part(play-button):before {
           content: var(--x-icon-pause, '⏸');
+          font-family: var(--x-icon-pause-font-family, var(--x-icon-font-family, monospace));
+          font-weight: var(--x-icon-pause-font-weight, var(--x-icon-font-weight, normal));
         }
 
         /* mute button */
@@ -305,15 +313,12 @@ export default class MediaControls extends HTMLElement {
         }
 
         :host::part(mute-button):before {
-          content: var(--x-icon-unmute, "\\1F50A");
-        }
-
-        :host(:state(--muted))::part(mute-button):before {
-          /* content: var(--x-icon-mute, '🔇'); */
+          content: var(--x-icon-speaker, "\\1F50A");
+          font-family: var(--x-icon-speaker-font-family, var(--x-icon-font-family, monospace));
+          font-weight: var(--x-icon-speaker-font-weight, var(--x-icon-font-weight, normal));
         }
 
         :host(:state(--muted))::part(mute-button):after {
-          /*content: var(--x-icon-strike, '\\2298');*/
           content: '';
           display: block;
           position: absolute;
