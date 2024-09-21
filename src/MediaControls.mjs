@@ -295,6 +295,7 @@ export default class MediaControls extends HTMLElement {
         :host::part(play-button) {
         }
 
+        :host::part(overlay-playbutton):before,
         :host(:state(--paused))::part(play-button):before {
           content: var(--x-icon-play, "▶");
           font-family: var(--x-icon-play-font-family, var(--x-icon-font-family, monospace));
@@ -315,7 +316,7 @@ export default class MediaControls extends HTMLElement {
         :host::part(mute-button):before {
           content: var(--x-icon-speaker, "\\1F50A");
           font-family: var(--x-icon-speaker-font-family, var(--x-icon-font-family, monospace));
-          font-weight: var(--x-icon-speaker-font-weight, var(--x-icon-font-weight, normal));
+          font-weight: var(--x-icon-pause-font-weight, var(--x-icon-font-weight, normal));
         }
 
         :host(:state(--muted))::part(mute-button):after {

@@ -8,34 +8,24 @@ use benignware\wp\agnosticon\get_icon_meta;
 /**
  * Example filter function to modify the default properties
  */
-function modify_mediacontrols_css($properties) {
+function modify_mediacontrols_css($styles) {
   if (function_exists('benignware\wp\agnosticon\get_icon_meta')) {
     
-    foreach ($properties as $property => $value) {
-      // echo 'PROPERTY: ' . $property;
-      // echo '<br>';
-      if (strpos($property, '--x-icon-') === 0) {
-        $icon_name = substr($property, 9);
+    foreach ($styles as $name => $value) {
+      if (strpos($name, '--x-icon-') === 0) {
+        $icon_name = substr($name, 9);
 
-        // echo 'ICON NAME: ' . $icon_name;
-        // echo '<br>';
+        $icon = \benignware\wp\agnosticon\get_icon_meta($icon_name);
 
-        // $icon = \benignware\wp\agnosticon\get_icon_meta($icon_name);
-
-        // if ($icon) {
-        //   print_r($icon);
-        //   exit;
-        // }
+        if ($icon) {
+          $styles[$name] = '"' . $icon->char . '"';
+          $styles[$name . "-font-family"] = $icon->font_family;
+          $styles[$name . "-font-weight"] = $icon->font_weight;
+        }
       }
     }
 
-    // print_r($properties);
-    // exit;
-
   }
-  // Optionally modify properties here, for example:
-  $properties['icon-play'] = '►'; // Change play icon
-  $properties['icon-unmute'] = '🔊'; // Change unmute icon
-  return $properties;
+  return $styles;
 }
 add_filter('mediacontrols_css', 'benignware\wp\mediacontrols\modify_mediacontrols_css');

@@ -18,7 +18,9 @@ class MediaControls {
         wp_register_style($handle, false); // Register without a file URL
         
         // Add inline style with dynamically generated CSS
-        wp_add_inline_style($handle, $this->generate_css());
+        $css = $this->generate_css();
+
+        wp_add_inline_style($handle, $css);
 
         // Enqueue the style
         wp_enqueue_style($handle);
@@ -28,22 +30,23 @@ class MediaControls {
      * Generate the dynamic CSS
      */
     private function generate_css() {
+       
         // Define default properties for x-mediacontrols
-        $default_properties = [
-            '--x-icon-play' => '▶',
-            '--x-icon-pause' => '⏸',
-            '--x-icon-expand' => '⛶',
-            '--x-icon-collapse' => '⛶',
-            '--x-icon-unmute' => '\\1F50A',
+        $default_styles = [
+            '--x-icon-play' => '"▶"',
+            '--x-icon-pause' => '"⏸"',
+            '--x-icon-expand' => '"⛶"',
+            '--x-icon-collapse' => '"⛶"',
+            '--x-icon-speaker' => '"\\1F50A"',
         ];
 
         // Apply the filter to allow modifications
-        $properties = apply_filters('mediacontrols_css', $default_properties);
+        $styles = apply_filters('mediacontrols_css', $default_styles);
 
         // Generate the CSS string
         $css = 'x-mediacontrols {';
-        foreach ($properties as $property => $value) {
-            $css .= "--{$property}: {$value};";
+        foreach ($styles as $name => $value) {
+            $css .= "{$name}: {$value};";
         }
         $css .= '}';
 
