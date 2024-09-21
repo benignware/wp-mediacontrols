@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "828b688c6ca4a9d84a8ce9f07871b512",
+    "content-hash": "4f80cbe1a4673b1bafdc2f1681005139",
     "packages": [
         {
             "name": "composer/installers",
@@ -159,6 +159,16 @@
         }
     ],
     "packages-dev": [
+        {
+            "name": "benignware/benignware-connect",
+            "version": "v1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/benignware/wp-benignware-connect.git",
+                "reference": "v1.0.1"
+            },
+            "type": "wordpress-plugin"
+        },
         {
             "name": "wpackagist-plugin/instant-images",
             "version": "6.1.2",

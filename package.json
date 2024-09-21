@@ -1,6 +1,6 @@
 {
   "name": "wp-mediacontrols",
-  "version": "1.0.0",
+  "version": "0.0.2",
   "description": "Consistent media controls across browsers",
   "main": "custom-attribute.jsx",
   "scripts": {
@@ -16,7 +16,8 @@
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
-    "rollup": "^4.21.2"
+    "rollup": "^4.21.2",
+    "rollup-plugin-css-only": "^4.5.2"
   },
   "dependencies": {
     "x-elements": "github:benignware-labs/x-elements"

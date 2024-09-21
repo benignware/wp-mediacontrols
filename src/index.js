@@ -1,3 +1,4 @@
-import 'x-elements/lib/MediaControls/MediaControls.mjs';
+import './MediaControls.mjs';
+import './index.css';
 
 console.log('Hello, world!');

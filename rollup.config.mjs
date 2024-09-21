@@ -1,5 +1,6 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import css from 'rollup-plugin-css-only';
 import babel from '@rollup/plugin-babel';
 
 export default [
@@ -39,7 +40,8 @@ export default [
                 babelHelpers: 'bundled',
                 presets: ['@babel/preset-env'],
                 exclude: 'node_modules/**'
-            })
+            }),
+            css({ output: 'mediacontrols.css' }), // Correct path for CSS output
         ]
     }
 ];
