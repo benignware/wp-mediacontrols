@@ -7,7 +7,9 @@
   } = wp.compose;
   const {
     ToggleControl,
-    PanelBody
+    PanelBody,
+    SelectControl,
+    RangeControl
   } = wp.components;
   const {
     InspectorControls
@@ -45,7 +47,7 @@
 
   // Add custom attributes for video controls
   const addVideoControlAttributes = (settings, name) => {
-    if (name === 'core/video') {
+    if (name === 'core/video' || name === 'core/cover') {
       settings.attributes = {
         ...settings.attributes,
         showFullscreenButton: {
@@ -91,15 +93,21 @@
         textColor: {
           type: 'string',
           default: 'var(--wp--preset--color--white)'
+        },
+        panelAnimation: {
+          type: 'string',
+          default: 'none'
+        },
+        panelOpacity: {
+          type: 'number',
+          default: 55
         }
       };
-      settings.supports = {
-        ...(settings.supports || {}),
-        color: {
-          background: true,
-          text: true
-        }
-      };
+
+      // settings.supports = {
+      //   ...(settings.supports || {}),
+      //   color: { background: true, text: true },
+      // };
     }
     return settings;
   };
@@ -138,10 +146,17 @@
         attributes,
         setAttributes
       } = props;
-      if (props.name === 'core/video' && attributes.controls) {
+      const showControls = attributes.controls;
+      if (props.name === 'core/video' || props.name === 'core/cover') {
         return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(InspectorControls, null, /*#__PURE__*/React.createElement(PanelBody, {
           title: "Media Controls Settings"
         }, /*#__PURE__*/React.createElement(ToggleControl, {
+          label: "Enable Controls",
+          checked: showControls,
+          onChange: value => setAttributes({
+            controls: value
+          })
+        }), showControls && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ToggleControl, {
           label: "Fullscreen Button",
           checked: attributes.showFullscreenButton,
           onChange: value => setAttributes({
@@ -189,16 +204,42 @@
           onChange: value => setAttributes({
             showCurrentTime: value
           })
-        }))), /*#__PURE__*/React.createElement(BlockEdit, props));
+        }), /*#__PURE__*/React.createElement(SelectControl, {
+          label: "Panel Animation",
+          value: attributes.panelAnimation,
+          options: [{
+            value: 'none',
+            label: 'None'
+          }, {
+            value: 'slide',
+            label: 'Slide'
+          }, {
+            value: 'fade',
+            label: 'Fade'
+          }, {
+            value: 'slide-and-fade',
+            label: 'Slide and Fade'
+          }],
+          onChange: value => setAttributes({
+            panelAnimation: value
+          })
+        }), /*#__PURE__*/React.createElement(RangeControl, {
+          label: "Panel Opacity",
+          value: attributes.panelOpacity,
+          onChange: value => setAttributes({
+            panelOpacity: value
+          }),
+          min: 0,
+          max: 100,
+          step: 1
+        })))), /*#__PURE__*/React.createElement(BlockEdit, props));
       }
       return /*#__PURE__*/React.createElement(BlockEdit, props);
     };
   }, 'withVideoControlInspector');
   wp.hooks.addFilter('editor.BlockEdit', 'custom/video-controls-inspector', addVideoControlInspector);
-
-  // Save function for the video block
   const addSaveVideoElement = settings => {
-    if (settings.name === 'core/video') {
+    if (settings.name === 'core/video' || settings.name === 'core/cover') {
       const originalSave = settings.save;
       settings.save = props => {
         const {
@@ -211,29 +252,56 @@
           defaultBackground,
           defaultTextColor
         } = getButtonStylesFromSettings();
-        const backgroundColor = getColorValue(attributes.backgroundColor) || getColorValue(defaultBackground);
-        const textColor = getColorValue(attributes.textColor) || getColorValue(defaultTextColor);
-
+        // const backgroundColor = getColorValue(attributes.backgroundColor) || getColorValue(defaultBackground);
+        // const textColor = getColorValue(attributes.textColor) || getColorValue(defaultTextColor);
+        const backgroundColor = getColorValue(defaultBackground);
+        const textColor = getColorValue(defaultTextColor);
+        const {
+          panelAnimation,
+          panelOpacity
+        } = attributes;
         // Inline styles for x-mediacontrols
         const style = {
           '--x-controls-bg': backgroundColor,
-          '--x-controls-color': textColor
+          '--x-controls-color': textColor,
+          '--x-controls-bg-opacity': String(panelOpacity / 100),
+          // Normalized to 0-1 for CSS
+          '--x-controls-slide': panelAnimation === 'slide' || panelAnimation === 'slide-and-fade' ? '1' : '0',
+          '--x-controls-fade': panelAnimation === 'fade' || panelAnimation === 'slide-and-fade' ? '1' : '0'
         };
-        return /*#__PURE__*/React.createElement("x-mediacontrols", {
-          controls: attributes.controls,
-          controlslist: controlsList,
-          style: style
-        }, originalSave({
+
+        // Get the original save output
+        const originalOutput = originalSave({
           ...props,
           attributes: {
             ...props.attributes,
-            backgroundColor: undefined,
-            // Exclude from saved attributes
-            textColor: undefined,
-            // Exclude from saved attributes
+            // backgroundColor: undefined, // Exclude from saved attributes
+            // textColor: undefined,       // Exclude from saved attributes
             controls: false // Disable default controls to avoid conflicts
           }
-        }));
+        });
+
+        // Clone the video element and wrap it in x-mediacontrols with overlay
+        const wrappedVideo = React.Children.map(originalOutput.props.children, child => {
+          // Check if the child is the video tag
+          if (React.isValidElement(child) && child.type === 'video') {
+            // Find the overlay (wp-block-cover__background) in the children
+            const overlay = React.Children.toArray(originalOutput.props.children).find(overlayChild => React.isValidElement(overlayChild) && overlayChild.props.className && overlayChild.props.className.includes('wp-block-cover__background'));
+            console.log('style: ', style);
+
+            // Return the wrapped video
+            return /*#__PURE__*/React.createElement("x-mediacontrols", {
+              controls: attributes.controls,
+              controlslist: controlsList,
+              style: style,
+              className: "wp-block-video" // Ensure class matches expected output
+            }, overlay, child);
+          }
+          return child; // Return other children as they are
+        });
+
+        // Return the updated output
+        return React.cloneElement(originalOutput, {}, wrappedVideo);
       };
     }
     return settings;

@@ -127,6 +127,7 @@ export default class MediaControls extends HTMLElement {
           bottom: 0;
           overflow: hidden;
           pointer-events: none;
+          z-index: 1;
         }
 
         /* controls panel */
@@ -137,7 +138,7 @@ export default class MediaControls extends HTMLElement {
           right: 0;
           bottom: 0;
           /*background: var(--x-controls-bg, color-mix(in srgb, black 45%, transparent));*/
-          background: rgba(from var(--x-controls-bg, black) r g b / 0.55);
+          background: rgba(from var(--x-controls-bg, black) r g b / var(--x-controls-bg-opacity, 0.55));
           color: var(--x-controls-color, #fff);
           transition-delay: 0s;
           padding: var(--x-controls-padding-y, 0.5rem) var(--x-controls-padding-x, 0.5rem);
@@ -370,7 +371,7 @@ export default class MediaControls extends HTMLElement {
           padding: 1.3rem;
           font: var(--x-icon-font, monospace);
           font-size: 2rem;
-          background: rgba(from var(--x-controls-bg, black) r g b / 0.55);
+          background: rgba(from var(--x-controls-bg, black) r g b / var(--x-controls-bg-opacity, 0.55));
           border-radius: 50%;
           display: flex;
           justify-content: center;
