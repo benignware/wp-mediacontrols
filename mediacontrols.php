@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MediaControls
  * Description: Consistent media controls across browsers
- * Version: 0.0.7
+ * Version: 0.0.8
  * Author: Rafael Nowrotek
  * Author URI: https:/benignware.com
  * Network: true
