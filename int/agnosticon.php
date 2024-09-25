@@ -15,7 +15,23 @@ function modify_mediacontrols_css($styles) {
       if (strpos($name, '--x-icon-') === 0) {
         $icon_name = substr($name, 9);
 
-        $icon = \benignware\wp\agnosticon\get_icon_meta($icon_name);
+        $query = [$icon_name];
+
+        if ($icon_name === 'expand') {
+          $query = ['fullscreen', 'expand', 'maximize'];
+        }
+
+        if ($icon_name === 'collapse') {
+          $query = ['fullscreen', 'compress', 'minimize', 'collapse'];
+        }
+
+        if ($icon_name === 'speaker') {
+          $query = ['volume-high', 'volume', 'speaker'];
+        }
+
+        $result = \benignware\wp\agnosticon\get_icons($query);
+
+        $icon = $result[0] ?? null;
 
         if ($icon) {
           $styles[$name] = '"' . $icon->char . '"';
