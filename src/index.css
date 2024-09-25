@@ -12,9 +12,10 @@ x-mediacontrols figure {
   bottom: 0;
 }
 
-.wp-block-cover x-mediacontrols video.wp-block-cover__video-background {
-  position: static;
+.wp-block-cover.has-parallax x-mediacontrols ~ .cover-background-overlay {
+  pointer-events: none;
 }
+
 
 .wp-block-cover x-mediacontrols::part(body) {
   position: absolute;

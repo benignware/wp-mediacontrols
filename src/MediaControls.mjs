@@ -93,6 +93,16 @@ export default class MediaControls extends HTMLElement {
           font-size: var(--x-font-size, 0.9rem);
         }
 
+        :host(:state(--fullscreen)) {
+            width: 100vw !important;
+            height: 100vh !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+        }
+
         :host figure {
           display: flex;
         }
@@ -1101,8 +1111,10 @@ export default class MediaControls extends HTMLElement {
 
     this.#controlsFrame.style.setProperty('transform', '');
 
+    const isPositionFixed = style.getPropertyValue('position') === 'fixed';
+
     // if (this.#for) {
-      const mediaElementBounds = this.#mediaElement.getBoundingClientRect();
+      const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
 
       this.#controlsFrame.style.setProperty('width', `${mediaElementBounds.width}px`);
       this.#controlsFrame.style.setProperty('height', `${mediaElementBounds.height}px`);
