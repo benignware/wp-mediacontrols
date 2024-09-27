@@ -1,6 +1,6 @@
 {
   "name": "benignware/wp-mediacontrols",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "type": "wordpress-plugin",
   "license": "MIT",
   "description": "Consistent media controls across browsers",
@@ -25,12 +25,12 @@
     "type": "package",
     "package": {
       "name": "benignware/benignware-connect",
-      "version": "v1.0.1",
+      "version": "v1.0.4",
       "type": "wordpress-plugin",
       "source": {
         "type": "git",
         "url": "https://github.com/benignware/wp-benignware-connect.git",
-        "reference": "v1.0.1"
+        "reference": "v1.0.4"
       }
     }
   }, {
@@ -51,7 +51,7 @@
   },
   "require-dev": {
     "wptrt/theme-unit-test": "dev-master",
-    "benignware/benignware-connect": ">=1.0.1",
+    "benignware/benignware-connect": ">=1.0.4",
     "wpackagist-plugin/icon-fonts": ">=1.0.0",
     "wpackagist-plugin/instant-images": "^6.1.2",
     "wpackagist-theme/twentyseventeen": ">=2.9",

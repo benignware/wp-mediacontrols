@@ -8,9 +8,9 @@ namespace benignware\wp\mediacontrols;
 function add_mediacontrols_block_attribute() {
   wp_enqueue_script(
       'mediacontrols-script-editor',
-      plugin_dir_url( __FILE__ ) . 'dist/editor.js',
+      plugin_dir_url( __FILE__ ) . 'dist/mediacontrols-editor.js',
       array( 'wp-blocks', 'wp-element', 'wp-editor' ),
-      filemtime( plugin_dir_path( __FILE__ ) . 'dist/editor.js' ), // Version based on file modification time
+      filemtime( plugin_dir_path( __FILE__ ) . 'dist/mediacontrols-editor.js' ), // Version based on file modification time
       true // Load in footer
   );
 

@@ -7,9 +7,9 @@ export default [
     {
         input: 'src/editor.jsx', // Editor script entry point
         output: [{
-            file: 'dist/editor.js',
+            file: 'dist/mediacontrols-editor.js',
             format: 'iife',
-            name: 'CustomAttributeEditor',
+            name: 'MediaControlsEditor',
             globals: {
                 'react': 'wp.element', // Use WordPress' React version
                 'react-dom': 'wp.element' // Adjust if necessary
