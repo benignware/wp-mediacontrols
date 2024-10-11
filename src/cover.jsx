@@ -206,7 +206,7 @@ const withVideoSettings = createHigherOrderComponent((BlockEdit) => {
 addFilter('editor.BlockEdit', 'my-plugin/cover-video-settings', withVideoSettings);
 
 
-
+/*
 // Add video properties to the save function
 function addVideoPropsToSave(settings, name) {
     if (name === 'core/cover') {
@@ -237,43 +237,44 @@ function addVideoPropsToSave(settings, name) {
 
       // Modify the save function to clean children and strip whitespace
       settings.save = (props) => {
-          const { attributes } = props;
-          const { controls, autoplay, loop, muted, playsInline, preload, poster, url, hasParallax } = attributes;
-
-          // Extract the original save output
-          const originalElement = originalSave(props);
-
-          // Clean the children of the original save element
-          const cleanedChildren = cleanChildren(originalElement.props.children);
-
-          // Map through children and modify the video tag if necessary
-          const modifiedChildren = Children.map(cleanedChildren, (child) => {
-              if (!child) {
-                  return null;
-              }
-
-              // Modify video tag settings
-              if (child.type === 'video') {
-                  return cloneElement(child, {
-                      poster,
-                      controls,
-                      autoPlay: autoplay,
-                      loop,
-                      muted,
-                      playsInline,
-                      preload,
-                      src: url || child.props.src,
-                      style: hasParallax ? { position: 'fixed' } : {}, // Apply fixed position if hasParallax is true
-                  });
-              }
-
-              // Leave image or other elements unmodified
-              return child;
-          });
-
-          // Return the modified save output with the cleaned children
-          return cloneElement(originalElement, {}, modifiedChildren);
-      };
+        const { attributes } = props;
+        const { controls, autoplay, loop, muted, playsInline, preload, poster, url, hasParallax } = attributes;
+    
+        // Extract the original save output
+        const originalElement = originalSave(props);
+    
+        // Clean the children of the original save element
+        const cleanedChildren = cleanChildren(originalElement.props.children);
+    
+        // Map through children and modify the video tag if necessary
+        const modifiedChildren = Children.map(cleanedChildren, (child) => {
+            if (!child) {
+                return null;
+            }
+    
+            // Modify video tag settings
+            if (child.type === 'video') {
+                return cloneElement(child, {
+                    poster,
+                    controls,
+                    autoPlay: autoplay,
+                    loop,
+                    muted,
+                    playsInline,
+                    preload,
+                    src: url || child.props.src,
+                    style: hasParallax ? { position: 'fixed' } : {}, // Apply fixed position if hasParallax is true
+                });
+            }
+    
+            // Leave image or other elements unmodified
+            return child;
+        });
+    
+        // Return the modified save output with the cleaned children
+        return cloneElement(originalElement, {}, modifiedChildren);
+    };
+    
 
       
     }
@@ -286,3 +287,4 @@ addFilter(
     'my-plugin/add-video-props-to-save',
     addVideoPropsToSave
 );
+*/

@@ -247,92 +247,88 @@
   // Hook into BlockEdit for the Cover block.
   addFilter('editor.BlockEdit', 'my-plugin/cover-video-settings', withVideoSettings);
 
+  /*
   // Add video properties to the save function
   function addVideoPropsToSave(settings, name) {
-    if (name === 'core/cover') {
-      const originalSave = settings.save;
+      if (name === 'core/cover') {
+          const originalSave = settings.save;
 
-      // Helper function to strip out unnecessary whitespace in the children
-      const cleanChildren = children => Children.map(children, child => {
-        if (!child) return null;
+            // Helper function to strip out unnecessary whitespace in the children
+            const cleanChildren = (children) =>
+                Children.map(children, (child) => {
+            if (!child) return null;
 
-        // If child is a string, trim whitespace
-        if (typeof child === 'string') {
-          const trimmedChild = child.trim();
-          return trimmedChild.length > 0 ? trimmedChild : null;
-        }
+              // If child is a string, trim whitespace
+              if (typeof child === 'string') {
+                  const trimmedChild = child.trim();
+                  return trimmedChild.length > 0 ? trimmedChild : null;
+              }
 
-        // If child has children, recursively clean them
-        if (child.props && child.props.children) {
-          const cleanedChild = cloneElement(child, {
-            children: cleanChildren(child.props.children)
-          });
-          return cleanedChild;
-        }
+              // If child has children, recursively clean them
+              if (child.props && child.props.children) {
+                  const cleanedChild = cloneElement(child, {
+                      children: cleanChildren(child.props.children),
+                  });
+                  return cleanedChild;
+              }
 
-        // Return the child unchanged if no further cleaning is necessary
-        return child;
-      });
-
-      // Modify the save function to clean children and strip whitespace
-      settings.save = props => {
-        const {
-          attributes
-        } = props;
-        const {
-          controls,
-          autoplay,
-          loop,
-          muted,
-          playsInline,
-          preload,
-          poster,
-          url,
-          hasParallax
-        } = attributes;
-
-        // Extract the original save output
-        const originalElement = originalSave(props);
-
-        // Clean the children of the original save element
-        const cleanedChildren = cleanChildren(originalElement.props.children);
-
-        // Map through children and modify the video tag if necessary
-        const modifiedChildren = Children.map(cleanedChildren, child => {
-          if (!child) {
-            return null;
-          }
-
-          // Modify video tag settings
-          if (child.type === 'video') {
-            return cloneElement(child, {
-              poster,
-              controls,
-              autoPlay: autoplay,
-              loop,
-              muted,
-              playsInline,
-              preload,
-              src: url || child.props.src,
-              style: hasParallax ? {
-                position: 'fixed'
-              } : {} // Apply fixed position if hasParallax is true
+              // Return the child unchanged if no further cleaning is necessary
+              return child;
             });
-          }
 
-          // Leave image or other elements unmodified
-          return child;
-        });
-
-        // Return the modified save output with the cleaned children
-        return cloneElement(originalElement, {}, modifiedChildren);
+        // Modify the save function to clean children and strip whitespace
+        settings.save = (props) => {
+          const { attributes } = props;
+          const { controls, autoplay, loop, muted, playsInline, preload, poster, url, hasParallax } = attributes;
+      
+          // Extract the original save output
+          const originalElement = originalSave(props);
+      
+          // Clean the children of the original save element
+          const cleanedChildren = cleanChildren(originalElement.props.children);
+      
+          // Map through children and modify the video tag if necessary
+          const modifiedChildren = Children.map(cleanedChildren, (child) => {
+              if (!child) {
+                  return null;
+              }
+      
+              // Modify video tag settings
+              if (child.type === 'video') {
+                  return cloneElement(child, {
+                      poster,
+                      controls,
+                      autoPlay: autoplay,
+                      loop,
+                      muted,
+                      playsInline,
+                      preload,
+                      src: url || child.props.src,
+                      style: hasParallax ? { position: 'fixed' } : {}, // Apply fixed position if hasParallax is true
+                  });
+              }
+      
+              // Leave image or other elements unmodified
+              return child;
+          });
+      
+          // Return the modified save output with the cleaned children
+          return cloneElement(originalElement, {}, modifiedChildren);
       };
-    }
-    return settings;
+      
+
+        
+      }
+      return settings;
   }
 
   // Hook into BlockType to modify the save function
-  addFilter('blocks.registerBlockType', 'my-plugin/add-video-props-to-save', addVideoPropsToSave);
+  addFilter(
+      'blocks.registerBlockType',
+      'my-plugin/add-video-props-to-save',
+      addVideoPropsToSave
+  );
+  */
 
   const {
     createHigherOrderComponent
