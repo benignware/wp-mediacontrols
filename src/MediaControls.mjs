@@ -274,6 +274,7 @@ export default class MediaControls extends HTMLElement {
           box-sizing: content-box;
           cursor: pointer;
           pointer-events: auto;
+          font-size:v ar(--x-icon-size, 20px);
         }
 
         :host::part(control-button):before,
@@ -380,7 +381,7 @@ export default class MediaControls extends HTMLElement {
           transition: all 0.3s ease-in;
           padding: 1.3rem;
           font: var(--x-icon-font, monospace);
-          font-size: 2rem;
+          font-size:var(--x-overlay-icon-size, 36px);
           background: rgba(from var(--x-controls-bg, black) r g b / var(--x-controls-bg-opacity, 0.55));
           border-radius: 50%;
           display: flex;
