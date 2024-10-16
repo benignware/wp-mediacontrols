@@ -45,7 +45,6 @@ function enqueue_mediacontrols_frontend_script() {
         plugin_dir_url( __FILE__ ) . 'dist/mediacontrols.js',
         array( 'wp-element' ), // Add any dependencies the frontend script might have
         filemtime( plugin_dir_path( __FILE__ ) . 'dist/mediacontrols.js' ), // Version based on file modification time
-        true // Load in footer
     );
 
     wp_enqueue_style(
