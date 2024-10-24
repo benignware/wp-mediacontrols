@@ -122,7 +122,7 @@ const withVideoSettings = createHigherOrderComponent((BlockEdit) => {
           return <BlockEdit {...props} />;
       }
 
-      const { backgroundType, hasParallax, controls, autoplay, loop, poster, url } = attributes;
+      const { controls, autoplay, loop, poster, url, hasParallax } = attributes;
 
       // Function to handle the selection of the poster image
       const onSelectPoster = (media) => {
@@ -133,9 +133,13 @@ const withVideoSettings = createHigherOrderComponent((BlockEdit) => {
       const onRemovePoster = () => {
           setAttributes({ poster: undefined });
       };
-      
+
+      // Create a unique ID for the poster description
       const videoPosterDescription = `video-poster-description-${props.clientId}`;
-      const isVideoBackground = backgroundType === 'video';
+
+      // Check if the URL points to an image
+      const isImageSelected = url && IMAGE_FORMATS.some((format) => url.endsWith(format));
+      const isVideoSelected = url && !isImageSelected;
 
       return (
           <Fragment>
@@ -143,7 +147,7 @@ const withVideoSettings = createHigherOrderComponent((BlockEdit) => {
               <InspectorControls>
                   <PanelBody title="Video Settings" initialOpen={false}>
                       {/* Only render VideoSettings if a video is selected */}
-                      {isVideoBackground && (
+                      {isVideoSelected && (
                           <>
                               <ToggleControl
                                 label={ __( 'Fixed background' ) }
@@ -200,3 +204,87 @@ const withVideoSettings = createHigherOrderComponent((BlockEdit) => {
 
 // Hook into BlockEdit for the Cover block.
 addFilter('editor.BlockEdit', 'my-plugin/cover-video-settings', withVideoSettings);
+
+
+/*
+// Add video properties to the save function
+function addVideoPropsToSave(settings, name) {
+    if (name === 'core/cover') {
+        const originalSave = settings.save;
+
+          // Helper function to strip out unnecessary whitespace in the children
+          const cleanChildren = (children) =>
+              Children.map(children, (child) => {
+          if (!child) return null;
+
+            // If child is a string, trim whitespace
+            if (typeof child === 'string') {
+                const trimmedChild = child.trim();
+                return trimmedChild.length > 0 ? trimmedChild : null;
+            }
+
+            // If child has children, recursively clean them
+            if (child.props && child.props.children) {
+                const cleanedChild = cloneElement(child, {
+                    children: cleanChildren(child.props.children),
+                });
+                return cleanedChild;
+            }
+
+            // Return the child unchanged if no further cleaning is necessary
+            return child;
+          });
+
+      // Modify the save function to clean children and strip whitespace
+      settings.save = (props) => {
+        const { attributes } = props;
+        const { controls, autoplay, loop, muted, playsInline, preload, poster, url, hasParallax } = attributes;
+    
+        // Extract the original save output
+        const originalElement = originalSave(props);
+    
+        // Clean the children of the original save element
+        const cleanedChildren = cleanChildren(originalElement.props.children);
+    
+        // Map through children and modify the video tag if necessary
+        const modifiedChildren = Children.map(cleanedChildren, (child) => {
+            if (!child) {
+                return null;
+            }
+    
+            // Modify video tag settings
+            if (child.type === 'video') {
+                return cloneElement(child, {
+                    poster,
+                    controls,
+                    autoPlay: autoplay,
+                    loop,
+                    muted,
+                    playsInline,
+                    preload,
+                    src: url || child.props.src,
+                    style: hasParallax ? { position: 'fixed' } : {}, // Apply fixed position if hasParallax is true
+                });
+            }
+    
+            // Leave image or other elements unmodified
+            return child;
+        });
+    
+        // Return the modified save output with the cleaned children
+        return cloneElement(originalElement, {}, modifiedChildren);
+    };
+    
+
+      
+    }
+    return settings;
+}
+
+// Hook into BlockType to modify the save function
+addFilter(
+    'blocks.registerBlockType',
+    'my-plugin/add-video-props-to-save',
+    addVideoPropsToSave
+);
+*/

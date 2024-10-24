@@ -40,6 +40,8 @@ export default class MediaControls extends HTMLElement {
   #elementControlsObserver = null;
   #elementControlsObserverEnabled = true;
 
+  #targetAttributeObserver = null;
+
   static MEDIA_SELECTOR = 'video, audio';
   static CONTROLS_TIMEOUT = 3000;
 
@@ -75,6 +77,9 @@ export default class MediaControls extends HTMLElement {
     this.handleControlsListChange = this.handleControlsListChange.bind(this);
     this.handleElementControlsChanged = this.handleElementControlsChanged.bind(this);
 
+    this.handleTargetAttributeChange = this.handleTargetAttributeChange.bind(this);
+    this.handleElementControlsChanged = this.handleElementControlsChanged.bind(this);
+
     this.update = this.update.bind(this);
 
     this.attachShadow({ mode: "open" });
@@ -82,11 +87,15 @@ export default class MediaControls extends HTMLElement {
 
     this.#controlslist = new MediaControlsList(this.handleControlsListChange);
 
-    this.#elementControlsObserver = new MutationObserver(this.handleElementControlsChanged.bind(this));
+    this.#elementControlsObserver = new MutationObserver(this.handleElementControlsChanged);
+    this.#targetAttributeObserver = new MutationObserver(this.handleTargetAttributeChange);
 
     const html = `
       <style>
         :host {
+          --x-controls-padding-x: 14px;
+          --x-controls-padding-y: 12px;
+          --x-controls-gap: 10px;
           display: block;
           position: relative;
           font-family: var(--x-font-family, sans-serif);
@@ -152,7 +161,6 @@ export default class MediaControls extends HTMLElement {
           color: var(--x-controls-color, #fff);
           transition-delay: 0s;
           padding: var(--x-controls-padding-y, 0.5rem) var(--x-controls-padding-x, 0.5rem);
-          
           /*gap: var(--x-controls-gap, 0.5rem);*/
         }
 
@@ -181,7 +189,7 @@ export default class MediaControls extends HTMLElement {
           padding-left: calc(var(--x-controls-gap, 0.5rem) / 2);
           padding-right: calc(var(--x-controls-gap, 0.5rem) / 2);
           box-sizing: border-box;
-          min-height: 1rem;
+          /* min-height: 1rem; */
         }
 
         :host(:state(--nocontrols))::part(overlay-playbutton),
@@ -270,11 +278,11 @@ export default class MediaControls extends HTMLElement {
           justify-content: center;
           align-items: center;
           line-height: 1;
-          height: 1rem;
+          /* height: 1rem; */
           box-sizing: content-box;
           cursor: pointer;
           pointer-events: auto;
-          font-size:v ar(--x-icon-size, 20px);
+          font-size: var(--x-icon-size, 24px);
         }
 
         :host::part(control-button):before,
@@ -323,6 +331,12 @@ export default class MediaControls extends HTMLElement {
         /* mute button */
         :host::part(mute-button) {
           position: relative;
+          /* margin-left: auto; */
+        }
+
+        /* mute button */
+        :host::part(volume-slider) {
+          /* margin-left: auto; */
         }
 
         :host::part(mute-button):before {
@@ -360,12 +374,13 @@ export default class MediaControls extends HTMLElement {
           content: ' / ';
         }
 
-        /* current-time-display */
-        :host::part(current-time) {
-        }
-
-        :host::part(display) {
-          
+        :host(:where(
+                [controlslist="nocurrenttime"],
+                [controlslist^="nocurrenttime "],
+                [controlslist*=" nocurrenttime "],
+                [controlslist$=" nocurrenttime"]
+        ))::part(duration)::before {
+          display: none;
         }
 
         :host::part(duration):empty {
@@ -381,7 +396,7 @@ export default class MediaControls extends HTMLElement {
           transition: all 0.3s ease-in;
           padding: 1.3rem;
           font: var(--x-icon-font, monospace);
-          font-size:var(--x-overlay-icon-size, 36px);
+          font-size: var(--x-overlay-icon-size, 36px);
           background: rgba(from var(--x-controls-bg, black) r g b / var(--x-controls-bg-opacity, 0.55));
           border-radius: 50%;
           display: flex;
@@ -439,6 +454,7 @@ export default class MediaControls extends HTMLElement {
         .mute-button ~ input[type=range] {
           /* outline: 1px solid pink !important; */
         }
+
 
         .mute-button ~ input[type=range] {
           max-width: calc(
@@ -662,16 +678,15 @@ export default class MediaControls extends HTMLElement {
   }
 
   setTargetElement(targetElement) {
-    console.log('set target element', targetElement);
     const containerElement = this.contains(targetElement) ? this.#body : targetElement;
 
-    console.log('targetElement: ', targetElement);
-    // if (targetElement !== this.#containerElement) {
-
+    if (targetElement !== this.#containerElement) {
       if (this.#containerElement) {
         // Remove event listeners
         this.#containerElement.removeEventListener('pointermove', this.handlePointerMove);
         this.#containerElement.removeEventListener('pointerleave', this.handlePointerLeave);
+
+        this.#targetAttributeObserver.disconnect();
       }
 
       this.#containerElement = containerElement;
@@ -680,6 +695,13 @@ export default class MediaControls extends HTMLElement {
         // Add event listeners
         this.#containerElement.addEventListener('pointermove', this.handlePointerMove);
         this.#containerElement.addEventListener('pointerleave', this.handlePointerLeave);
+
+        this.handleTargetAttributeChange();
+
+        // this.#targetAttributeObserver.observe(this.#containerElement, {
+        //   attributes: true,
+        //   attributeFilter: ['style', 'data-controlslist'],
+        // });
       }
       
       let mediaElement = null;
@@ -691,11 +713,37 @@ export default class MediaControls extends HTMLElement {
       }
 
       this.mediaElement = mediaElement;
-    // }
+    }
   }
 
   getTargetElement() {
     return this.#containerElement;
+  }
+  
+  handleTargetAttributeChange = () => {
+    const targetElement = this.#containerElement;
+    
+    if (this.contains(targetElement)) {
+      return;
+    }
+
+    if (targetElement.hasAttribute('data-controls')) {
+      this.controls = targetElement.hasAttribute('data-controls');
+    }
+
+    if (targetElement.hasAttribute('data-controlslist')) {
+      this.controlslist = targetElement.getAttribute('data-controlslist');
+    }
+
+    const styleProps = ['--x-controls-bg', '--x-controls-color', '--x-controls-bg-opacity', '--x-controls-slide', '--x-controls-fade'];
+
+    styleProps.forEach((styleProp) => {
+      const value = targetElement.style.getPropertyValue(styleProp);
+
+      if (value) {
+        this.style.setProperty(styleProp, targetElement.style.getPropertyValue(styleProp));
+      }
+    });
   }
 
   set mediaElement(value) {
@@ -724,23 +772,32 @@ export default class MediaControls extends HTMLElement {
         this.#mediaElement.addEventListener('timeupdate', this.handleTimeUpdate);
         this.#mediaElement.addEventListener('durationchange', this.handleTimeUpdate);
         this.#mediaElement.addEventListener('volumechange', this.handleVolumeChange);
-
         
         this.#mediaElement.addEventListener('click', this.handleElementClick);
         this.#mediaElement.addEventListener('dblclick', this.handleElementDblClick);
 
-
-        console.log('init media element', this.#controls, this.#mediaElement.controls);
-
         this.handleElementControlsChanged();
 
+        // TODO: Make handler an instance method and properly disconnect observer on dispose
         this.#elementControlsObserver.observe(this.#mediaElement, {
           attributes: true,
           attributeFilter: ['muted'],
         });
 
+        if (this.#mediaElement.readyState >= 2) {
+          this.#timeline.max = 100;
+          this.#internals.states.add('--loadeddata');
+          this.#internals.states.add('--animated');
+
+          if (this.#mediaElement.readyState >= 3) {
+            this.#internals.states.add('--canplay');
+          }
+        }
+
         this.#mediaElement.muted ? this.#internals.states.add('--muted') : this.#internals.states.delete('--muted');
         this.#volumeSlider.value = this.#mediaElement.muted ? 0 : this.#mediaElement.volume * 100;
+
+        this.#mediaElement.controls = false;
 
         if (this.#mediaElement.readyState === 0 && this.#mediaElement.autoplay || !this.#mediaElement.paused) {
           this.hideControls(0);
@@ -767,7 +824,6 @@ export default class MediaControls extends HTMLElement {
   }
 
   toggleFullscreen() {
-    console.log('this.#containerElement: ', this.#containerElement);
     if (!document.fullscreenElement) {
       this.#containerElement.requestFullscreen().catch((err) => {
         alert(
@@ -780,7 +836,6 @@ export default class MediaControls extends HTMLElement {
   }
 
   handleSlotChange(event) {
-    console.log('SLOT CHANGE');
     if (this.for) {
       return;
     }
@@ -926,7 +981,7 @@ export default class MediaControls extends HTMLElement {
       clearTimeout(this.#autohideTimeout);
     }
 
-    if (this.#mediaElement.paused) {
+    if (!this.#mediaElement || this.#mediaElement.paused) {
       return;
     }
 
@@ -958,17 +1013,11 @@ export default class MediaControls extends HTMLElement {
   }
 
   handleElementControlsChanged() {
-   
     if (!this.#elementControlsObserverEnabled) {
       return;
     }
 
-    
-
     this.#hasElementControls = this.#mediaElement.hasAttribute('controls');
-
-    console.log('ELEMENT CONTROLS CHANGED', this.#mediaElement.hasAttribute('controls'));
-
 
     this.#mediaElement.setAttribute('data-controls', this.#hasElementControls);
 
@@ -988,6 +1037,8 @@ export default class MediaControls extends HTMLElement {
   handleControlsListChange() {
     const controls = this.shadowRoot.querySelectorAll('[part="controls-panel"] *[part]');
     const hasVisibleControls = Array.from(controls).some(control => getComputedStyle(control).display !== 'none');
+
+    console.log('handleControlsListChange', hasVisibleControls);
 
     if (!hasVisibleControls) {
       this.#internals.states.add('--nocontrols');
@@ -1017,7 +1068,6 @@ export default class MediaControls extends HTMLElement {
   }
 
   connectedCallback() {
-    console.log('CONNECTED CALLBACK');
     window.addEventListener('resize', this.handleResize);
     document.addEventListener('fullscreenchange', this.handleFullscreenChange);
     this.#slot.addEventListener('slotchange', this.handleSlotChange);
@@ -1045,17 +1095,21 @@ export default class MediaControls extends HTMLElement {
     this.#playButton.removeEventListener('click', this.handlePlayButtonClick);
     this.#muteButton.removeEventListener('click', this.handleMuteButtonClick);
     this.#fullscreenButton.removeEventListener('click', this.handleFullscreenButtonClick);
-
-    // this.shadowRoot.removeEventListener('click', this.handleClick);
-    // this.shadowRoot.removeEventListener('dblclick', this.handleDblClick);
-    // this.removeEventListener('pointermove', this.handlePointerMove);
-    // this.removeEventListener('pointerleave', this.handlePointerLeave);
-
-
     this.#timeline.removeEventListener('change', this.handleTimelineChange);
     this.#volumeSlider.removeEventListener('change', this.handleVolumeSliderChange);
 
     this.setTargetElement(null);
+  }
+
+  dispose() {
+    const hasControls = this.#mediaElement.hasAttribute('data-controls');
+    this.#mediaElement.removeAttribute('data-controls');
+
+    if (hasControls) {
+      this.#mediaElement.setAttribute('controls', '');
+    } else {
+      this.#mediaElement.removeAttribute('controls');
+    }
   }
 
   hideControls(timeout = MediaControls.CONTROLS_TIMEOUT) {
@@ -1084,6 +1138,12 @@ export default class MediaControls extends HTMLElement {
   }
 
   update() {
+    if (!this.#containerElement) {
+      return;
+    }
+
+    this.handleTargetAttributeChange();
+
     if (!this.#mediaElement) {
       return;
     }
@@ -1135,6 +1195,18 @@ export default class MediaControls extends HTMLElement {
     }
   }
 
+  render() {
+    this.update();
+  }
+
+  set forElement(element) {
+    this.setTargetElement(element);
+  }
+
+  get forElement() {
+    return !this.contains(this.#containerElement) ? this.#containerElement : null;
+  }
+
   set for(value) {
     if (value !== this.for) {
       if (value) {
@@ -1157,21 +1229,42 @@ export default class MediaControls extends HTMLElement {
     return this.#for;
   }
 
+  set controlslist(value) {
+    this.#controlslist.clear();
+    // this.#controlslist.add(value);
+    // this.update();
+    if (value) {
+      this.setAttribute('controlslist', value);
+    } else {
+      this.removeAttribute('controlslist');
+    }
+
+    this.handleControlsListChange();
+  }
+
   get controlslist() {
     return this.#controlslist;
   }
 
   set controls(value) {
+    console.log('*** SET controls', value, this.#controls);
+    value = value === 'false' ? false : !!value;
+
     if (value !== this.#controls) {
       const attrValue = this.hasAttribute('controls') ? this.getAttribute('controls') : null;
 
-      if (value !== attrValue) {
-        this.setAttribute('controls', value);
+      if (attrValue === null || value !== attrValue) {
+        console.log('this.setAttribute("controls", value);', value);
+        if (value) {
+          this.setAttribute('controls', '');
+        } else {
+          this.removeAttribute('controls');
+        }
       }
 
       this.#controls = value;
 
-      console.log('SET CONTROLS: ', value, this.#mediaElement);
+      console.log('this.#mediaElement: ', this.#mediaElement);
 
       if (this.#mediaElement) {
         this.#mediaElement.controls = false;
@@ -1182,8 +1275,9 @@ export default class MediaControls extends HTMLElement {
   }
 
   get controls() {
+    console.log('GET CONTROLS: ', this.#controls, this.#hasElementControls);
     if (this.#controls === null) {
-      return this.#hasElementControls
+      return this.#hasElementControls;
     }
 
     return !!this.#controls;
@@ -1199,6 +1293,8 @@ export default class MediaControls extends HTMLElement {
     if (name === 'controlslist') {
       this.controlslist.clear();
       this.controlslist.add(newValue);
+
+      this.handleControlsListChange();
 
       return;
     }

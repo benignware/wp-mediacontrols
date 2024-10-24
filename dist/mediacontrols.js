@@ -358,6 +358,7 @@
   var _hasElementControls = /*#__PURE__*/new WeakMap();
   var _elementControlsObserver = /*#__PURE__*/new WeakMap();
   var _elementControlsObserverEnabled = /*#__PURE__*/new WeakMap();
+  var _targetAttributeObserver = /*#__PURE__*/new WeakMap();
   var MediaControls = /*#__PURE__*/function (_HTMLElement) {
     function MediaControls() {
       var _this;
@@ -389,6 +390,26 @@
       _classPrivateFieldInitSpec(_this, _hasElementControls, false);
       _classPrivateFieldInitSpec(_this, _elementControlsObserver, null);
       _classPrivateFieldInitSpec(_this, _elementControlsObserverEnabled, true);
+      _classPrivateFieldInitSpec(_this, _targetAttributeObserver, null);
+      _defineProperty(_this, "handleTargetAttributeChange", function () {
+        var targetElement = _classPrivateFieldGet2(_containerElement, _this);
+        if (_this.contains(targetElement)) {
+          return;
+        }
+        if (targetElement.hasAttribute('data-controls')) {
+          _this.controls = targetElement.hasAttribute('data-controls');
+        }
+        if (targetElement.hasAttribute('data-controlslist')) {
+          _this.controlslist = targetElement.getAttribute('data-controlslist');
+        }
+        var styleProps = ['--x-controls-bg', '--x-controls-color', '--x-controls-bg-opacity', '--x-controls-slide', '--x-controls-fade'];
+        styleProps.forEach(function (styleProp) {
+          var value = targetElement.style.getPropertyValue(styleProp);
+          if (value) {
+            _this.style.setProperty(styleProp, targetElement.style.getPropertyValue(styleProp));
+          }
+        });
+      });
       _this.handleResize = _this.handleResize.bind(_this);
       _this.handleSlotChange = _this.handleSlotChange.bind(_this);
       _this.handlePlay = _this.handlePlay.bind(_this);
@@ -412,18 +433,21 @@
       _this.handlePointerLeave = _this.handlePointerLeave.bind(_this);
       _this.handleControlsListChange = _this.handleControlsListChange.bind(_this);
       _this.handleElementControlsChanged = _this.handleElementControlsChanged.bind(_this);
+      _this.handleTargetAttributeChange = _this.handleTargetAttributeChange.bind(_this);
+      _this.handleElementControlsChanged = _this.handleElementControlsChanged.bind(_this);
       _this.update = _this.update.bind(_this);
       _this.attachShadow({
         mode: "open"
       });
       _classPrivateFieldSet2(_internals, _this, _this.attachInternals());
       _classPrivateFieldSet2(_controlslist, _this, new MediaControlsList(_this.handleControlsListChange));
-      _classPrivateFieldSet2(_elementControlsObserver, _this, new MutationObserver(_this.handleElementControlsChanged.bind(_this)));
-      var html = "\n      <style>\n        :host {\n          display: block;\n          position: relative;\n          font-family: var(--x-font-family, sans-serif);\n          font-size: var(--x-font-size, 0.9rem);\n        }\n\n        :host(:state(--fullscreen)) {\n            width: 100vw !important;\n            height: 100vh !important;\n            position: fixed !important;\n            top: 0 !important;\n            left: 0 !important;\n            right: 0 !important;\n            bottom: 0 !important;\n        }\n\n        :host figure {\n          display: flex;\n        }\n\n        :host video::-webkit-media-controls-panel {\n            display: none !important;\n            opacity: 1 !important;\n        }\n\n        /*:host slot {\n          display: block;\n          overflow: hidden;\n          pointer-events: none;\n          outline: 2px solid red;\n        }*/\n\n        :host([for]) {\n          display: block;\n          overflow: visible;\n        }\n\n        :host::part(body) {\n          position: relative;\n          display: flex;\n        }\n\n        :host::part(controls-frame) {\n          position: absolute;\n          top: 0;\n          left: 0;\n          right: 0;\n          bottom: 0;\n          overflow: hidden;\n          pointer-events: none;\n          z-index: 1;\n        }\n\n        /* controls panel */\n        :host::part(controls-panel) {\n          pointer-events: auto;\n          position: absolute;\n          left: 0;\n          right: 0;\n          bottom: 0;\n          /*background: var(--x-controls-bg, color-mix(in srgb, black 45%, transparent));*/\n          background: rgba(from var(--x-controls-bg, black) r g b / var(--x-controls-bg-opacity, 0.55));\n          color: var(--x-controls-color, #fff);\n          transition-delay: 0s;\n          padding: var(--x-controls-padding-y, 0.5rem) var(--x-controls-padding-x, 0.5rem);\n          \n          /*gap: var(--x-controls-gap, 0.5rem);*/\n        }\n\n        :host::part(controls-panel) {\n          transform: translateY(\n            calc(\n              100% * var(--x-controls-slide, 1) +\n              0% * (1 - var(--x-controls-slide, 1))\n            )\n          );\n          opacity: calc(\n            0 * var(--x-controls-fade, 1) +\n            1 * (1 - var(--x-controls-fade, 1))\n          );\n        }\n\n        :host::part(controls-panel-body) {\n          display: flex;\n          justify-content: start;\n          align-items: center;\n          margin-left: calc(var(--x-controls-gap, 0.5rem) / 2 * -1);\n          margin-right: calc(var(--x-controls-gap, 0.5rem) / 2 * -1);\n        }\n\n        :host::part(control) {\n          padding-left: calc(var(--x-controls-gap, 0.5rem) / 2);\n          padding-right: calc(var(--x-controls-gap, 0.5rem) / 2);\n          box-sizing: border-box;\n          min-height: 1rem;\n        }\n\n        :host(:state(--nocontrols))::part(overlay-playbutton),\n        :host(:state(--nocontrols))::part(controls-panel) {\n          display: none;\n        }\n\n        :host(:state(--animated))::part(controls-panel) {\n          transition: transform 0.3s ease-in, opacity 0.3s ease-in;\n        }\n\n        :host(:state(--paused))::part(controls-panel) {\n        }\n\n        :host(:state(--fullscreen))::part(controls-panel) {\n        }\n\n        :host(:state(--controlsvisible))::part(controls-panel) {\n          transform: translateY(0);\n          transition-delay: 0.1s;\n          opacity: 1;\n        }\n\n        /* sliders */\n        :host::part(slider) {\n          -webkit-appearance: none;\n          appearance: none;\n          background: transparent;\n          cursor: pointer;\n          display: block;\n          /*width: max-content;\n          flex-grow: 1;\n          flex-shrink: 1; */\n          pointer-events: auto;\n          margin: 0;\n        }\n\n        :host::part(timeline) {\n          min-width: 65px;\n          flex-grow: 1;\n          flex-shrink: 1;\n        }\n\n        ".concat(['-webkit-slider-runnable-track', '-moz-range-track'].map(function (selector) {
+      _classPrivateFieldSet2(_elementControlsObserver, _this, new MutationObserver(_this.handleElementControlsChanged));
+      _classPrivateFieldSet2(_targetAttributeObserver, _this, new MutationObserver(_this.handleTargetAttributeChange));
+      var html = "\n      <style>\n        :host {\n          --x-controls-padding-x: 14px;\n          --x-controls-padding-y: 12px;\n          --x-controls-gap: 10px;\n          display: block;\n          position: relative;\n          font-family: var(--x-font-family, sans-serif);\n          font-size: var(--x-font-size, 0.9rem);\n        }\n\n        :host(:state(--fullscreen)) {\n            width: 100vw !important;\n            height: 100vh !important;\n            position: fixed !important;\n            top: 0 !important;\n            left: 0 !important;\n            right: 0 !important;\n            bottom: 0 !important;\n        }\n\n        :host figure {\n          display: flex;\n        }\n\n        :host video::-webkit-media-controls-panel {\n            display: none !important;\n            opacity: 1 !important;\n        }\n\n        /*:host slot {\n          display: block;\n          overflow: hidden;\n          pointer-events: none;\n          outline: 2px solid red;\n        }*/\n\n        :host([for]) {\n          display: block;\n          overflow: visible;\n        }\n\n        :host::part(body) {\n          position: relative;\n          display: flex;\n        }\n\n        :host::part(controls-frame) {\n          position: absolute;\n          top: 0;\n          left: 0;\n          right: 0;\n          bottom: 0;\n          overflow: hidden;\n          pointer-events: none;\n          z-index: 1;\n        }\n\n        /* controls panel */\n        :host::part(controls-panel) {\n          pointer-events: auto;\n          position: absolute;\n          left: 0;\n          right: 0;\n          bottom: 0;\n          /*background: var(--x-controls-bg, color-mix(in srgb, black 45%, transparent));*/\n          background: rgba(from var(--x-controls-bg, black) r g b / var(--x-controls-bg-opacity, 0.55));\n          color: var(--x-controls-color, #fff);\n          transition-delay: 0s;\n          padding: var(--x-controls-padding-y, 0.5rem) var(--x-controls-padding-x, 0.5rem);\n          /*gap: var(--x-controls-gap, 0.5rem);*/\n        }\n\n        :host::part(controls-panel) {\n          transform: translateY(\n            calc(\n              100% * var(--x-controls-slide, 1) +\n              0% * (1 - var(--x-controls-slide, 1))\n            )\n          );\n          opacity: calc(\n            0 * var(--x-controls-fade, 1) +\n            1 * (1 - var(--x-controls-fade, 1))\n          );\n        }\n\n        :host::part(controls-panel-body) {\n          display: flex;\n          justify-content: start;\n          align-items: center;\n          margin-left: calc(var(--x-controls-gap, 0.5rem) / 2 * -1);\n          margin-right: calc(var(--x-controls-gap, 0.5rem) / 2 * -1);\n        }\n\n        :host::part(control) {\n          padding-left: calc(var(--x-controls-gap, 0.5rem) / 2);\n          padding-right: calc(var(--x-controls-gap, 0.5rem) / 2);\n          box-sizing: border-box;\n          /* min-height: 1rem; */\n        }\n\n        :host(:state(--nocontrols))::part(overlay-playbutton),\n        :host(:state(--nocontrols))::part(controls-panel) {\n          display: none;\n        }\n\n        :host(:state(--animated))::part(controls-panel) {\n          transition: transform 0.3s ease-in, opacity 0.3s ease-in;\n        }\n\n        :host(:state(--paused))::part(controls-panel) {\n        }\n\n        :host(:state(--fullscreen))::part(controls-panel) {\n        }\n\n        :host(:state(--controlsvisible))::part(controls-panel) {\n          transform: translateY(0);\n          transition-delay: 0.1s;\n          opacity: 1;\n        }\n\n        /* sliders */\n        :host::part(slider) {\n          -webkit-appearance: none;\n          appearance: none;\n          background: transparent;\n          cursor: pointer;\n          display: block;\n          /*width: max-content;\n          flex-grow: 1;\n          flex-shrink: 1; */\n          pointer-events: auto;\n          margin: 0;\n        }\n\n        :host::part(timeline) {\n          min-width: 65px;\n          flex-grow: 1;\n          flex-shrink: 1;\n        }\n\n        ".concat(['-webkit-slider-runnable-track', '-moz-range-track'].map(function (selector) {
         return "\n          *::".concat(selector, " {\n            width: 100%;\n            height: var(--x-slider-height, 0.5rem);\n            cursor: pointer;\n            box-shadow: var(--x-slider-shadow, inset 0 1px 2px color-mix(in srgb, black 5%, transparent));\n            background: var(--x-slider-bg, color-mix(in srgb, var(--x-controls-color, #fff) 50%, transparent));\n            border-radius: var(--x-slider-radius, 0.5rem);\n            border-width: var(--x-slider-border-width, 0);\n            border-style: var(--x-slider-border-style, solid);\n            border-color: var(--x-slider-border-color, #010101);\n            display: flex;\n          }\n          \n          input[type=range]:focus::").concat(selector, " {\n            /*background: initial;*/\n          }\n        ");
       }).join('\n'), "\n\n        ").concat(['-webkit-slider-thumb', '-moz-range-thumb'].map(function (selector) {
         return "\n          *::".concat(selector, " {\n            -webkit-appearance: none;\n            appearance: none;\n            width: var(--x-slider-thumb-width, 0.5rem); \n            height: var(--x-slider-thumb-height, 0.5rem);\n            border-radius: 50%;\n            background: var(--x-controls-color, #fff);\n            cursor: pointer;\n            margin-top: calc((var(--x-slider-height, 0.5rem) - var(--x-slider-thumb-height, 0.5rem)) / 2);\n          }\n        ");
-      }).join('\n'), "\n\n        /* control buttons */\n        :host::part(control-button) {\n          aspect-ratio: 1;\n          display: flex;\n          justify-content: center;\n          align-items: center;\n          line-height: 1;\n          height: 1rem;\n          box-sizing: content-box;\n          cursor: pointer;\n          pointer-events: auto;\n          font-size:v ar(--x-overlay-icon-size, 24px);\n        }\n\n        :host::part(control-button):before,\n        :host::part(overlay-playbutton):before,\n        :host::part(control-button):after {\n          font-family: var(--x-icon-font-family, monospace);\n          font-weight: var(--x-icon-font-weight, normal);\n          color: var(--x-controls-color, #fff);\n        }\n\n        /* fullscreen button */\n        :host::part(fullscreen-button) {\n          grid-area: fullscreen-button;\n          margin-left: auto;\n        }\n\n        :host::part(fullscreen-button)::before {\n          content: var(--x-icon-expand, '\u26F6');\n          font-family: var(--x-icon-expand-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-expand-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        :host(:state(--fullscreen))::part(fullscreen-button)::before {\n          content: var(--x-icon-collapse, '\u26F6');\n          font-family: var(--x-icon-collapse-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-collapse-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        /* play button */\n        :host::part(play-button) {\n        }\n\n        :host::part(overlay-playbutton):before,\n        :host(:state(--paused))::part(play-button):before {\n          content: var(--x-icon-play, \"\u25B6\");\n          font-family: var(--x-icon-play-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-play-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        :host::part(play-button):before {\n          content: var(--x-icon-pause, '\u23F8');\n          font-family: var(--x-icon-pause-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-pause-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        /* mute button */\n        :host::part(mute-button) {\n          position: relative;\n        }\n\n        :host::part(mute-button):before {\n          content: var(--x-icon-speaker, \"\\1F50A\");\n          font-family: var(--x-icon-speaker-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-pause-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        :host(:state(--muted))::part(mute-button):after {\n          content: '';\n          display: block;\n          position: absolute;\n          left: auto;\n          top: 0;\n          height: 1rem;\n          aspect-ratio: 1;\n          color: red;\n          font-size: 2rem;\n          width: 1rem;\n          background: linear-gradient(to right top, transparent, transparent 40%, #eee 40%, #eee 50%, #333 50%, #333 60%, transparent 60%, transparent);\n        }\n\n        :host::part(time-display) {\n          display: flex;\n          flex-wrap: nowrap;\n          white-space: nowrap;\n        }\n\n        /* duration-display */\n        :host::part(duration) {\n          color: var(--x-muted, color-mix(in srgb, var(--x-controls-color, #fff) 50%, transparent));\n        }\n\n        :host::part(duration)::before {\n          content: ' / ';\n        }\n\n        /* current-time-display */\n        :host::part(current-time) {\n        }\n\n        :host::part(display) {\n          \n        }\n\n        :host::part(duration):empty {\n          display: none;\n        }\n\n        /* overlay play button */\n        :host::part(overlay-playbutton) {\n          position: absolute;\n          top: 50%;\n          left: 50%;\n          transform: translate(-50%, -50%);\n          transition: all 0.3s ease-in;\n          padding: 1.3rem;\n          font: var(--x-icon-font, monospace);\n          font-size:var(--x-overlay-font-size, 36px);\n          background: rgba(from var(--x-controls-bg, black) r g b / var(--x-controls-bg-opacity, 0.55));\n          border-radius: 50%;\n          display: flex;\n          justify-content: center;\n          align-items: center;\n          box-sizing: content-box;\n          cursor: pointer;\n          text-align: center;\n          opacity: 0.5;\n          transition: all 0.09s linear;\n          visibility: hidden;\n          aspect-ratio: 1;\n          height: 1em;\n        }\n\n        :host::part(overlay-playbutton)::before {\n          content: var(--x-icon-play, \"\u25B6\");\n          display: block;\n          vertical-align: middle;\n        }\n\n        :host(:state(--canplay):state(--paused):not(:state(--played)))::part(overlay-playbutton) {\n          opacity: 1;\n          transform: translate(-50%, -50%) scale(1);\n          visibility: visible;\n        }\n\n        :host(:state(--played))::part(overlay-playbutton) {\n          opacity: 0;\n          transform: translate(-50%, -50%) scale(2.5);\n          transition: visibility 0s 0.4s, opacity 0.4s ease-out, transform 0.4s ease-in;\n          visibility: hidden;\n          pointer-events: none;\n          cursor: default;\n        }\n\n        /* volume-control */\n        .volume-control {\n          display: flex;\n          align-items: center;\n          position: relative;\n          /*margin-right: 0;*/\n          pointer-events: auto;\n        }\n\n        .mute-button ~ input[type=range] {\n          transition: all 0.2s ease-in;\n          width: 120px;\n        }\n\n        .mute-button {\n          /* outline: 1px solid green !important; */\n        }\n\n        .mute-button ~ input[type=range] {\n          /* outline: 1px solid pink !important; */\n        }\n\n        .mute-button ~ input[type=range] {\n          max-width: calc(\n            var(--x-volume-slider--width, 60px) * var(--x-volume-slider-expand, 1) +\n            0px * (1 - var(--x-volume-slider-expand, 1))\n          );\n          opacity: calc(\n            1 * var(--x-volume-slider-expand, 1) +\n            0 * (1 - var(--x-volume-slider-expand, 1))\n          );;\n          padding-left: calc(\n            0px * var(--x-volume-slider-expand, 1) +\n            var(--x-controls-gap, 0.5rem) / 2 * (1 - var(--x-volume-slider-expand, 1))\n          );\n          padding-right: calc(\n            0px * var(--x-volume-slider-expand, 1) +\n            var(--x-controls-gap, 0.5rem) / 2 * (1 - var(--x-volume-slider-expand, 1))\n          );\n        } \n\n        .mute-button:hover ~ input[type=range],\n        .mute-button ~ input[type=range]:hover {\n          /* outline: 1px solid yellow !important; */\n          opacity: 1;\n          max-width: var(--x-volume-slider--width, 60px);\n          padding-left: 0.5rem;\n        }\n\n        /* controlslist */\n      \n        ").concat(Object.entries({
+      }).join('\n'), "\n\n        /* control buttons */\n        :host::part(control-button) {\n          aspect-ratio: 1;\n          display: flex;\n          justify-content: center;\n          align-items: center;\n          line-height: 1;\n          /* height: 1rem; */\n          box-sizing: content-box;\n          cursor: pointer;\n          pointer-events: auto;\n          font-size: var(--x-icon-size, 24px);\n        }\n\n        :host::part(control-button):before,\n        :host::part(overlay-playbutton):before,\n        :host::part(control-button):after {\n          font-family: var(--x-icon-font-family, monospace);\n          font-weight: var(--x-icon-font-weight, normal);\n          color: var(--x-controls-color, #fff);\n        }\n\n        /* fullscreen button */\n        :host::part(fullscreen-button) {\n          grid-area: fullscreen-button;\n          margin-left: auto;\n        }\n\n        :host::part(fullscreen-button)::before {\n          content: var(--x-icon-expand, '\u26F6');\n          font-family: var(--x-icon-expand-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-expand-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        :host(:state(--fullscreen))::part(fullscreen-button)::before {\n          content: var(--x-icon-collapse, '\u26F6');\n          font-family: var(--x-icon-collapse-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-collapse-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        /* play button */\n        :host::part(play-button) {\n        }\n\n        :host::part(overlay-playbutton):before,\n        :host(:state(--paused))::part(play-button):before {\n          content: var(--x-icon-play, \"\u25B6\");\n          font-family: var(--x-icon-play-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-play-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        :host::part(play-button):before {\n          content: var(--x-icon-pause, '\u23F8');\n          font-family: var(--x-icon-pause-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-pause-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        /* mute button */\n        :host::part(mute-button) {\n          position: relative;\n          /* margin-left: auto; */\n        }\n\n        /* mute button */\n        :host::part(volume-slider) {\n          /* margin-left: auto; */\n        }\n\n        :host::part(mute-button):before {\n          content: var(--x-icon-speaker, \"\\1F50A\");\n          font-family: var(--x-icon-speaker-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-pause-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        :host(:state(--muted))::part(mute-button):after {\n          content: '';\n          display: block;\n          position: absolute;\n          left: auto;\n          top: 0;\n          height: 1rem;\n          aspect-ratio: 1;\n          color: red;\n          font-size: 2rem;\n          width: 1rem;\n          background: linear-gradient(to right top, transparent, transparent 40%, #eee 40%, #eee 50%, #333 50%, #333 60%, transparent 60%, transparent);\n        }\n\n        :host::part(time-display) {\n          display: flex;\n          flex-wrap: nowrap;\n          white-space: nowrap;\n        }\n\n        /* duration-display */\n        :host::part(duration) {\n          color: var(--x-muted, color-mix(in srgb, var(--x-controls-color, #fff) 50%, transparent));\n        }\n\n        :host::part(duration)::before {\n          content: ' / ';\n        }\n\n        :host(:where(\n                [controlslist=\"nocurrenttime\"],\n                [controlslist^=\"nocurrenttime \"],\n                [controlslist*=\" nocurrenttime \"],\n                [controlslist$=\" nocurrenttime\"]\n        ))::part(duration)::before {\n          display: none;\n        }\n\n        :host::part(duration):empty {\n          display: none;\n        }\n\n        /* overlay play button */\n        :host::part(overlay-playbutton) {\n          position: absolute;\n          top: 50%;\n          left: 50%;\n          transform: translate(-50%, -50%);\n          transition: all 0.3s ease-in;\n          padding: 1.3rem;\n          font: var(--x-icon-font, monospace);\n          font-size: var(--x-overlay-icon-size, 36px);\n          background: rgba(from var(--x-controls-bg, black) r g b / var(--x-controls-bg-opacity, 0.55));\n          border-radius: 50%;\n          display: flex;\n          justify-content: center;\n          align-items: center;\n          box-sizing: content-box;\n          cursor: pointer;\n          text-align: center;\n          opacity: 0.5;\n          transition: all 0.09s linear;\n          visibility: hidden;\n          aspect-ratio: 1;\n          height: 1em;\n        }\n\n        :host::part(overlay-playbutton)::before {\n          content: var(--x-icon-play, \"\u25B6\");\n          display: block;\n          vertical-align: middle;\n        }\n\n        :host(:state(--canplay):state(--paused):not(:state(--played)))::part(overlay-playbutton) {\n          opacity: 1;\n          transform: translate(-50%, -50%) scale(1);\n          visibility: visible;\n        }\n\n        :host(:state(--played))::part(overlay-playbutton) {\n          opacity: 0;\n          transform: translate(-50%, -50%) scale(2.5);\n          transition: visibility 0s 0.4s, opacity 0.4s ease-out, transform 0.4s ease-in;\n          visibility: hidden;\n          pointer-events: none;\n          cursor: default;\n        }\n\n        /* volume-control */\n        .volume-control {\n          display: flex;\n          align-items: center;\n          position: relative;\n          /*margin-right: 0;*/\n          pointer-events: auto;\n        }\n\n        .mute-button ~ input[type=range] {\n          transition: all 0.2s ease-in;\n          width: 120px;\n        }\n\n        .mute-button {\n          /* outline: 1px solid green !important; */\n        }\n\n        .mute-button ~ input[type=range] {\n          /* outline: 1px solid pink !important; */\n        }\n\n\n        .mute-button ~ input[type=range] {\n          max-width: calc(\n            var(--x-volume-slider--width, 60px) * var(--x-volume-slider-expand, 1) +\n            0px * (1 - var(--x-volume-slider-expand, 1))\n          );\n          opacity: calc(\n            1 * var(--x-volume-slider-expand, 1) +\n            0 * (1 - var(--x-volume-slider-expand, 1))\n          );;\n          padding-left: calc(\n            0px * var(--x-volume-slider-expand, 1) +\n            var(--x-controls-gap, 0.5rem) / 2 * (1 - var(--x-volume-slider-expand, 1))\n          );\n          padding-right: calc(\n            0px * var(--x-volume-slider-expand, 1) +\n            var(--x-controls-gap, 0.5rem) / 2 * (1 - var(--x-volume-slider-expand, 1))\n          );\n        } \n\n        .mute-button:hover ~ input[type=range],\n        .mute-button ~ input[type=range]:hover {\n          /* outline: 1px solid yellow !important; */\n          opacity: 1;\n          max-width: var(--x-volume-slider--width, 60px);\n          padding-left: 0.5rem;\n        }\n\n        /* controlslist */\n      \n        ").concat(Object.entries({
         'play-button': ['noplay', 'noplaybutton'],
         'overlay-playbutton': ['noplay', 'nooverlayplaybutton'],
         'fullscreen-button': ['nofullscreen', 'nofullscreenbutton'],
@@ -464,28 +488,32 @@
     return _createClass(MediaControls, [{
       key: "setTargetElement",
       value: function setTargetElement(targetElement) {
-        console.log('set target element', targetElement);
         var containerElement = this.contains(targetElement) ? _classPrivateFieldGet2(_body, this) : targetElement;
-        console.log('targetElement: ', targetElement);
-        // if (targetElement !== this.#containerElement) {
+        if (targetElement !== _classPrivateFieldGet2(_containerElement, this)) {
+          if (_classPrivateFieldGet2(_containerElement, this)) {
+            // Remove event listeners
+            _classPrivateFieldGet2(_containerElement, this).removeEventListener('pointermove', this.handlePointerMove);
+            _classPrivateFieldGet2(_containerElement, this).removeEventListener('pointerleave', this.handlePointerLeave);
+            _classPrivateFieldGet2(_targetAttributeObserver, this).disconnect();
+          }
+          _classPrivateFieldSet2(_containerElement, this, containerElement);
+          if (_classPrivateFieldGet2(_containerElement, this)) {
+            // Add event listeners
+            _classPrivateFieldGet2(_containerElement, this).addEventListener('pointermove', this.handlePointerMove);
+            _classPrivateFieldGet2(_containerElement, this).addEventListener('pointerleave', this.handlePointerLeave);
+            this.handleTargetAttributeChange();
 
-        if (_classPrivateFieldGet2(_containerElement, this)) {
-          // Remove event listeners
-          _classPrivateFieldGet2(_containerElement, this).removeEventListener('pointermove', this.handlePointerMove);
-          _classPrivateFieldGet2(_containerElement, this).removeEventListener('pointerleave', this.handlePointerLeave);
+            // this.#targetAttributeObserver.observe(this.#containerElement, {
+            //   attributes: true,
+            //   attributeFilter: ['style', 'data-controlslist'],
+            // });
+          }
+          var mediaElement = null;
+          if (targetElement) {
+            mediaElement = targetElement.matches(MediaControls.MEDIA_SELECTOR) ? targetElement : targetElement.querySelector(MediaControls.MEDIA_SELECTOR);
+          }
+          this.mediaElement = mediaElement;
         }
-        _classPrivateFieldSet2(_containerElement, this, containerElement);
-        if (_classPrivateFieldGet2(_containerElement, this)) {
-          // Add event listeners
-          _classPrivateFieldGet2(_containerElement, this).addEventListener('pointermove', this.handlePointerMove);
-          _classPrivateFieldGet2(_containerElement, this).addEventListener('pointerleave', this.handlePointerLeave);
-        }
-        var mediaElement = null;
-        if (targetElement) {
-          mediaElement = targetElement.matches(MediaControls.MEDIA_SELECTOR) ? targetElement : targetElement.querySelector(MediaControls.MEDIA_SELECTOR);
-        }
-        this.mediaElement = mediaElement;
-        // }
       }
     }, {
       key: "getTargetElement",
@@ -522,14 +550,24 @@
             _classPrivateFieldGet2(_mediaElement, this).addEventListener('volumechange', this.handleVolumeChange);
             _classPrivateFieldGet2(_mediaElement, this).addEventListener('click', this.handleElementClick);
             _classPrivateFieldGet2(_mediaElement, this).addEventListener('dblclick', this.handleElementDblClick);
-            console.log('init media element', _classPrivateFieldGet2(_controls, this), _classPrivateFieldGet2(_mediaElement, this).controls);
             this.handleElementControlsChanged();
+
+            // TODO: Make handler an instance method and properly disconnect observer on dispose
             _classPrivateFieldGet2(_elementControlsObserver, this).observe(_classPrivateFieldGet2(_mediaElement, this), {
               attributes: true,
               attributeFilter: ['muted']
             });
+            if (_classPrivateFieldGet2(_mediaElement, this).readyState >= 2) {
+              _classPrivateFieldGet2(_timeline, this).max = 100;
+              _classPrivateFieldGet2(_internals, this).states.add('--loadeddata');
+              _classPrivateFieldGet2(_internals, this).states.add('--animated');
+              if (_classPrivateFieldGet2(_mediaElement, this).readyState >= 3) {
+                _classPrivateFieldGet2(_internals, this).states.add('--canplay');
+              }
+            }
             _classPrivateFieldGet2(_mediaElement, this).muted ? _classPrivateFieldGet2(_internals, this).states.add('--muted') : _classPrivateFieldGet2(_internals, this).states["delete"]('--muted');
             _classPrivateFieldGet2(_volumeSlider, this).value = _classPrivateFieldGet2(_mediaElement, this).muted ? 0 : _classPrivateFieldGet2(_mediaElement, this).volume * 100;
+            _classPrivateFieldGet2(_mediaElement, this).controls = false;
             if (_classPrivateFieldGet2(_mediaElement, this).readyState === 0 && _classPrivateFieldGet2(_mediaElement, this).autoplay || !_classPrivateFieldGet2(_mediaElement, this).paused) {
               this.hideControls(0);
             } else {
@@ -549,7 +587,6 @@
     }, {
       key: "toggleFullscreen",
       value: function toggleFullscreen() {
-        console.log('this.#containerElement: ', _classPrivateFieldGet2(_containerElement, this));
         if (!document.fullscreenElement) {
           _classPrivateFieldGet2(_containerElement, this).requestFullscreen()["catch"](function (err) {
             alert("Error attempting to enable fullscreen mode: ".concat(err.message, " (").concat(err.name, ")"));
@@ -561,7 +598,6 @@
     }, {
       key: "handleSlotChange",
       value: function handleSlotChange(event) {
-        console.log('SLOT CHANGE');
         if (this["for"]) {
           return;
         }
@@ -703,7 +739,7 @@
         if (_classPrivateFieldGet2(_autohideTimeout, this)) {
           clearTimeout(_classPrivateFieldGet2(_autohideTimeout, this));
         }
-        if (_classPrivateFieldGet2(_mediaElement, this).paused) {
+        if (!_classPrivateFieldGet2(_mediaElement, this) || _classPrivateFieldGet2(_mediaElement, this).paused) {
           return;
         }
         _classPrivateFieldGet2(_internals, this).states["delete"]('--controlsvisible');
@@ -740,7 +776,6 @@
           return;
         }
         _classPrivateFieldSet2(_hasElementControls, this, _classPrivateFieldGet2(_mediaElement, this).hasAttribute('controls'));
-        console.log('ELEMENT CONTROLS CHANGED', _classPrivateFieldGet2(_mediaElement, this).hasAttribute('controls'));
         _classPrivateFieldGet2(_mediaElement, this).setAttribute('data-controls', _classPrivateFieldGet2(_hasElementControls, this));
         this.update();
         _classPrivateFieldSet2(_elementControlsObserverEnabled, this, false);
@@ -758,6 +793,7 @@
         var hasVisibleControls = Array.from(controls).some(function (control) {
           return getComputedStyle(control).display !== 'none';
         });
+        console.log('handleControlsListChange', hasVisibleControls);
         if (!hasVisibleControls) {
           _classPrivateFieldGet2(_internals, this).states.add('--nocontrols');
         } else {
@@ -782,7 +818,6 @@
     }, {
       key: "connectedCallback",
       value: function connectedCallback() {
-        console.log('CONNECTED CALLBACK');
         window.addEventListener('resize', this.handleResize);
         document.addEventListener('fullscreenchange', this.handleFullscreenChange);
         _classPrivateFieldGet2(_slot, this).addEventListener('slotchange', this.handleSlotChange);
@@ -808,15 +843,20 @@
         _classPrivateFieldGet2(_playButton, this).removeEventListener('click', this.handlePlayButtonClick);
         _classPrivateFieldGet2(_muteButton, this).removeEventListener('click', this.handleMuteButtonClick);
         _classPrivateFieldGet2(_fullscreenButton, this).removeEventListener('click', this.handleFullscreenButtonClick);
-
-        // this.shadowRoot.removeEventListener('click', this.handleClick);
-        // this.shadowRoot.removeEventListener('dblclick', this.handleDblClick);
-        // this.removeEventListener('pointermove', this.handlePointerMove);
-        // this.removeEventListener('pointerleave', this.handlePointerLeave);
-
         _classPrivateFieldGet2(_timeline, this).removeEventListener('change', this.handleTimelineChange);
         _classPrivateFieldGet2(_volumeSlider, this).removeEventListener('change', this.handleVolumeSliderChange);
         this.setTargetElement(null);
+      }
+    }, {
+      key: "dispose",
+      value: function dispose() {
+        var hasControls = _classPrivateFieldGet2(_mediaElement, this).hasAttribute('data-controls');
+        _classPrivateFieldGet2(_mediaElement, this).removeAttribute('data-controls');
+        if (hasControls) {
+          _classPrivateFieldGet2(_mediaElement, this).setAttribute('controls', '');
+        } else {
+          _classPrivateFieldGet2(_mediaElement, this).removeAttribute('controls');
+        }
       }
     }, {
       key: "hideControls",
@@ -848,6 +888,10 @@
       key: "update",
       value: function update() {
         var _document$fullscreenE;
+        if (!_classPrivateFieldGet2(_containerElement, this)) {
+          return;
+        }
+        this.handleTargetAttributeChange();
         if (!_classPrivateFieldGet2(_mediaElement, this)) {
           return;
         }
@@ -888,6 +932,19 @@
         }
       }
     }, {
+      key: "render",
+      value: function render() {
+        this.update();
+      }
+    }, {
+      key: "forElement",
+      get: function get() {
+        return !this.contains(_classPrivateFieldGet2(_containerElement, this)) ? _classPrivateFieldGet2(_containerElement, this) : null;
+      },
+      set: function set(element) {
+        this.setTargetElement(element);
+      }
+    }, {
       key: "for",
       get: function get() {
         return _classPrivateFieldGet2(_for, this);
@@ -910,23 +967,42 @@
       key: "controlslist",
       get: function get() {
         return _classPrivateFieldGet2(_controlslist, this);
+      },
+      set: function set(value) {
+        _classPrivateFieldGet2(_controlslist, this).clear();
+        // this.#controlslist.add(value);
+        // this.update();
+        if (value) {
+          this.setAttribute('controlslist', value);
+        } else {
+          this.removeAttribute('controlslist');
+        }
+        this.handleControlsListChange();
       }
     }, {
       key: "controls",
       get: function get() {
+        console.log('GET CONTROLS: ', _classPrivateFieldGet2(_controls, this), _classPrivateFieldGet2(_hasElementControls, this));
         if (_classPrivateFieldGet2(_controls, this) === null) {
           return _classPrivateFieldGet2(_hasElementControls, this);
         }
         return !!_classPrivateFieldGet2(_controls, this);
       },
       set: function set(value) {
+        console.log('*** SET controls', value, _classPrivateFieldGet2(_controls, this));
+        value = value === 'false' ? false : !!value;
         if (value !== _classPrivateFieldGet2(_controls, this)) {
           var attrValue = this.hasAttribute('controls') ? this.getAttribute('controls') : null;
-          if (value !== attrValue) {
-            this.setAttribute('controls', value);
+          if (attrValue === null || value !== attrValue) {
+            console.log('this.setAttribute("controls", value);', value);
+            if (value) {
+              this.setAttribute('controls', '');
+            } else {
+              this.removeAttribute('controls');
+            }
           }
           _classPrivateFieldSet2(_controls, this, value);
-          console.log('SET CONTROLS: ', value, _classPrivateFieldGet2(_mediaElement, this));
+          console.log('this.#mediaElement: ', _classPrivateFieldGet2(_mediaElement, this));
           if (_classPrivateFieldGet2(_mediaElement, this)) {
             _classPrivateFieldGet2(_mediaElement, this).controls = false;
           }
@@ -940,6 +1016,7 @@
         if (name === 'controlslist') {
           this.controlslist.clear();
           this.controlslist.add(newValue);
+          this.handleControlsListChange();
           return;
         }
         if (Reflect.has(this, name)) {
@@ -960,7 +1037,5 @@
   _defineProperty(MediaControls, "MEDIA_SELECTOR", 'video, audio');
   _defineProperty(MediaControls, "CONTROLS_TIMEOUT", 3000);
   customElements.define('x-mediacontrols', MediaControls);
-
-  console.log('Hello, world!');
 
 })();

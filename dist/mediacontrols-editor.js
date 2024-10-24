@@ -1,14 +1,11 @@
 (function () {
   'use strict';
 
-  // Define supported image formats
-  const IMAGE_FORMATS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.svg', '.webp'];
-
   /**
    * WordPress dependencies
    */
   const {
-    addFilter
+    addFilter: addFilter$1
   } = wp.hooks;
   const {
     Fragment: Fragment$1,
@@ -20,10 +17,10 @@
   } = wp.blockEditor;
   const {
     PanelBody: PanelBody$1,
-    Button,
+    Button: Button$1,
     BaseControl,
-    ToggleControl: ToggleControl$1,
-    SelectControl: SelectControl$1
+    ToggleControl: ToggleControl$2,
+    SelectControl: SelectControl$2
   } = wp.components;
   const {
     createHigherOrderComponent: createHigherOrderComponent$1
@@ -33,7 +30,7 @@
     MediaUploadCheck
   } = wp.blockEditor;
   const {
-    __,
+    __: __$1,
     _x,
     sprintf
   } = wp.i18n;
@@ -48,10 +45,10 @@
   // Preload options
   const options = [{
     value: 'auto',
-    label: __('Auto')
+    label: __$1('Auto')
   }, {
     value: 'metadata',
-    label: __('Metadata')
+    label: __$1('Metadata')
   }, {
     value: 'none',
     label: _x('None', 'Preload value')
@@ -95,7 +92,7 @@
   }
 
   // Register the new attributes for the cover block
-  addFilter('blocks.registerBlockType', 'my-plugin/add-video-attributes', addVideoAttributes);
+  addFilter$1('blocks.registerBlockType', 'mediacontrols/cover-video-settings', addVideoAttributes);
 
   // Video Settings Component
   const VideoSettings = ({
@@ -110,7 +107,7 @@
       playsInline,
       preload
     } = attributes;
-    const autoPlayHelpText = __('Autoplay may cause usability issues for some users.');
+    const autoPlayHelpText = __$1('Autoplay may cause usability issues for some users.');
     const getAutoplayHelp = Platform.select({
       web: useCallback(checked => checked ? autoPlayHelpText : null, []),
       native: autoPlayHelpText
@@ -134,30 +131,30 @@
         preload: value
       });
     }, [setAttributes]);
-    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ToggleControl$1, {
-      label: __('Autoplay'),
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ToggleControl$2, {
+      label: __$1('Autoplay'),
       onChange: toggleFactory.autoplay,
       checked: !!autoplay,
       help: getAutoplayHelp
-    }), /*#__PURE__*/React.createElement(ToggleControl$1, {
-      label: __('Loop'),
+    }), /*#__PURE__*/React.createElement(ToggleControl$2, {
+      label: __$1('Loop'),
       onChange: toggleFactory.loop,
       checked: !!loop
-    }), /*#__PURE__*/React.createElement(ToggleControl$1, {
-      label: __('Muted'),
+    }), /*#__PURE__*/React.createElement(ToggleControl$2, {
+      label: __$1('Muted'),
       onChange: toggleFactory.muted,
       checked: !!muted
-    }), /*#__PURE__*/React.createElement(ToggleControl$1, {
-      label: __('Playback controls'),
+    }), /*#__PURE__*/React.createElement(ToggleControl$2, {
+      label: __$1('Playback controls'),
       onChange: toggleFactory.controls,
       checked: !!controls
-    }), /*#__PURE__*/React.createElement(ToggleControl$1, {
-      label: __('Play inline'),
+    }), /*#__PURE__*/React.createElement(ToggleControl$2, {
+      label: __$1('Play inline'),
       onChange: toggleFactory.playsInline,
       checked: !!playsInline,
-      help: __('When enabled, videos will play directly within the webpage on mobile browsers, instead of opening in a fullscreen player.')
-    }), /*#__PURE__*/React.createElement(SelectControl$1, {
-      label: __('Preload'),
+      help: __$1('When enabled, videos will play directly within the webpage on mobile browsers, instead of opening in a fullscreen player.')
+    }), /*#__PURE__*/React.createElement(SelectControl$2, {
+      label: __$1('Preload'),
       value: preload,
       onChange: onChangePreload,
       options: options,
@@ -179,12 +176,13 @@
         return /*#__PURE__*/React.createElement(BlockEdit, props);
       }
       const {
+        backgroundType,
+        hasParallax,
         controls,
         autoplay,
         loop,
         poster,
-        url,
-        hasParallax
+        url
       } = attributes;
 
       // Function to handle the selection of the poster image
@@ -200,18 +198,13 @@
           poster: undefined
         });
       };
-
-      // Create a unique ID for the poster description
       const videoPosterDescription = `video-poster-description-${props.clientId}`;
-
-      // Check if the URL points to an image
-      const isImageSelected = url && IMAGE_FORMATS.some(format => url.endsWith(format));
-      const isVideoSelected = url && !isImageSelected;
+      const isVideoBackground = backgroundType === 'video';
       return /*#__PURE__*/React.createElement(Fragment$1, null, /*#__PURE__*/React.createElement(BlockEdit, props), /*#__PURE__*/React.createElement(InspectorControls$1, null, /*#__PURE__*/React.createElement(PanelBody$1, {
         title: "Video Settings",
         initialOpen: false
-      }, isVideoSelected && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ToggleControl$1, {
-        label: __('Fixed background'),
+      }, isVideoBackground && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ToggleControl$2, {
+        label: __$1('Fixed background'),
         checked: hasParallax // Use the new attribute
         ,
         onChange: newValue => setAttributes({
@@ -222,413 +215,444 @@
         attributes: attributes
       }), /*#__PURE__*/React.createElement(MediaUploadCheck, null, /*#__PURE__*/React.createElement("div", {
         className: "editor-video-poster-control"
-      }, /*#__PURE__*/React.createElement(BaseControl.VisualLabel, null, __('Poster image')), /*#__PURE__*/React.createElement(MediaUpload, {
-        title: __('Select poster image'),
+      }, /*#__PURE__*/React.createElement(BaseControl.VisualLabel, null, __$1('Poster image')), /*#__PURE__*/React.createElement(MediaUpload, {
+        title: __$1('Select poster image'),
         onSelect: onSelectPoster,
         allowedTypes: ['image'],
         render: ({
           open
-        }) => /*#__PURE__*/React.createElement(Button, {
+        }) => /*#__PURE__*/React.createElement(Button$1, {
           variant: "primary",
           onClick: open,
           "aria-describedby": videoPosterDescription
-        }, !poster ? __('Select') : __('Replace'))
+        }, !poster ? __$1('Select') : __$1('Replace'))
       }), /*#__PURE__*/React.createElement("p", {
         id: videoPosterDescription,
         hidden: true
       }, poster ? sprintf(/* translators: %s: poster image URL. */
-      __('The current poster image URL is %s'), poster) : __('There is no poster image currently selected')), poster && /*#__PURE__*/React.createElement(Button, {
+      __$1('The current poster image URL is %s'), poster) : __$1('There is no poster image currently selected')), poster && /*#__PURE__*/React.createElement(Button$1, {
         onClick: onRemovePoster,
         variant: "tertiary"
-      }, __('Remove'))))))));
+      }, __$1('Remove'))))))));
     };
   }, 'withVideoSettings');
 
   // Hook into BlockEdit for the Cover block.
-  addFilter('editor.BlockEdit', 'my-plugin/cover-video-settings', withVideoSettings);
+  addFilter$1('editor.BlockEdit', 'my-plugin/cover-video-settings', withVideoSettings);
 
-  /*
-  // Add video properties to the save function
-  function addVideoPropsToSave(settings, name) {
-      if (name === 'core/cover') {
-          const originalSave = settings.save;
-
-            // Helper function to strip out unnecessary whitespace in the children
-            const cleanChildren = (children) =>
-                Children.map(children, (child) => {
-            if (!child) return null;
-
-              // If child is a string, trim whitespace
-              if (typeof child === 'string') {
-                  const trimmedChild = child.trim();
-                  return trimmedChild.length > 0 ? trimmedChild : null;
-              }
-
-              // If child has children, recursively clean them
-              if (child.props && child.props.children) {
-                  const cleanedChild = cloneElement(child, {
-                      children: cleanChildren(child.props.children),
-                  });
-                  return cleanedChild;
-              }
-
-              // Return the child unchanged if no further cleaning is necessary
-              return child;
-            });
-
-        // Modify the save function to clean children and strip whitespace
-        settings.save = (props) => {
-          const { attributes } = props;
-          const { controls, autoplay, loop, muted, playsInline, preload, poster, url, hasParallax } = attributes;
-      
-          // Extract the original save output
-          const originalElement = originalSave(props);
-      
-          // Clean the children of the original save element
-          const cleanedChildren = cleanChildren(originalElement.props.children);
-      
-          // Map through children and modify the video tag if necessary
-          const modifiedChildren = Children.map(cleanedChildren, (child) => {
-              if (!child) {
-                  return null;
-              }
-      
-              // Modify video tag settings
-              if (child.type === 'video') {
-                  return cloneElement(child, {
-                      poster,
-                      controls,
-                      autoPlay: autoplay,
-                      loop,
-                      muted,
-                      playsInline,
-                      preload,
-                      src: url || child.props.src,
-                      style: hasParallax ? { position: 'fixed' } : {}, // Apply fixed position if hasParallax is true
-                  });
-              }
-      
-              // Leave image or other elements unmodified
-              return child;
-          });
-      
-          // Return the modified save output with the cleaned children
-          return cloneElement(originalElement, {}, modifiedChildren);
-      };
-      
-
-        
+  function _extends() {
+    return _extends = Object.assign ? Object.assign.bind() : function (n) {
+      for (var e = 1; e < arguments.length; e++) {
+        var t = arguments[e];
+        for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]);
       }
-      return settings;
+      return n;
+    }, _extends.apply(null, arguments);
   }
 
-  // Hook into BlockType to modify the save function
-  addFilter(
-      'blocks.registerBlockType',
-      'my-plugin/add-video-props-to-save',
-      addVideoPropsToSave
-  );
-  */
+  const {
+    RangeControl: RangeControl$1,
+    SelectControl: SelectControl$1,
+    ToggleControl: ToggleControl$1,
+    ColorPalette,
+    ColorPicker,
+    Dropdown,
+    ColorIndicator,
+    Popover,
+    Button,
+    __experimentalHStack: HStack,
+    Flex,
+    FlexItem
+  } = wp.components;
+  wp.blockEditor;
+  wp.i18n;
+  const {
+    withState
+  } = wp.compose;
+  const BlockRemovalListener = ({
+    onBlockRemove
+  }) => {
+    const {
+      select
+    } = wp.data;
+    const {
+      useEffect,
+      useState
+    } = wp.element;
+    const {
+      store: blockEditorStore
+    } = wp.blockEditor;
+    const blocks = select(blockEditorStore).getBlocks();
+    const [prevBlocks, setPrevBlocks] = useState(blocks);
+    useEffect(() => {
+      if (prevBlocks.length > blocks.length) {
+        const removedBlocks = prevBlocks.filter(prevBlock => !blocks.some(block => block.clientId === prevBlock.clientId));
+        if (removedBlocks.length && typeof onBlockRemove === 'function') {
+          // Execute the callback for each removed block
+          removedBlocks.forEach(block => onBlockRemove(block));
+        }
+      }
+
+      // Update the previous blocks state to the current state
+      setPrevBlocks(blocks);
+    }, [blocks, prevBlocks, onBlockRemove]);
+    return null; // No UI, purely an event listener
+  };
+
+  // const {
+  //   RangeControl,
+  //   SelectControl,
+  //   ToggleControl,
+  //   ColorPalette,
+  //   Dropdown,
+  //   Popover,
+  //   Button,
+  // } = wp.components;
+  // const { withState } = wp.compose;
+  // const { __ } = wp.i18n;
+
+  const renderControl = ({
+    type,
+    label,
+    value,
+    onChange,
+    ...props
+  }) => {
+    // console.log('renderControl', type, label, value, onChange, props);
+    switch (type) {
+      case 'boolean':
+        return /*#__PURE__*/React.createElement(ToggleControl$1, _extends({
+          label: label,
+          checked: value,
+          onChange: onChange
+        }, props));
+      case 'number':
+        return /*#__PURE__*/React.createElement(RangeControl$1, _extends({
+          label: label,
+          value: value,
+          onChange: onChange
+        }, props));
+      case 'select':
+        return /*#__PURE__*/React.createElement(SelectControl$1, _extends({
+          label: label,
+          value: value,
+          options: props.options,
+          onChange: onChange
+        }, props));
+      case 'color':
+        return /*#__PURE__*/React.createElement(ColorPickerControl, {
+          label: label,
+          value: value,
+          onChange: onChange,
+          __experimentalIsRenderedInSidebar: true
+        });
+      default:
+        return null;
+    }
+  };
+
+  // ColorPickerControl component
+  const ColorPickerControl = withState({
+    isOpen: false
+  })(({
+    label,
+    value,
+    onChange,
+    isOpen,
+    setState,
+    __experimentalIsRenderedInSidebar
+  }) => {
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Dropdown, {
+      contentClassName: "color-picker-dropdown",
+      renderToggle: ({
+        onToggle
+      }) => /*#__PURE__*/React.createElement(Button, {
+        className: "components-color-picker-button",
+        style: {
+          padding: 0
+        },
+        onClick: () => {
+          onToggle();
+          setState({
+            isOpen: !isOpen
+          }); // Toggle dropdown visibility
+        },
+        "aria-expanded": isOpen
+      }, /*#__PURE__*/React.createElement(HStack, {
+        justify: "flex-start"
+      }, /*#__PURE__*/React.createElement(ColorIndicator, {
+        className: "block-editor-panel-color-gradient-settings__color-indicator",
+        colorValue: value
+      }), /*#__PURE__*/React.createElement(FlexItem, {
+        className: "block-editor-panel-color-gradient-settings__color-name",
+        title: label
+      }, label))),
+      renderContent: () => /*#__PURE__*/React.createElement(Popover, {
+        position: "middle center",
+        onClose: () => setState({
+          isOpen: false
+        })
+      }, /*#__PURE__*/React.createElement(ColorPicker, {
+        color: value // Pass the current color
+        ,
+        onChangeComplete: newColor => {
+          onChange(newColor.hex); // Use the hex value
+          setState({
+            isOpen: false
+          }); // Close dropdown on color selection
+        },
+        __experimentalIsRenderedInSidebar: __experimentalIsRenderedInSidebar // Pass down the prop
+      }))
+    }));
+  });
 
   const {
-    createHigherOrderComponent
-  } = wp.compose;
+    __
+  } = wp.i18n;
   const {
+    Fragment
+  } = wp.element;
+  const {
+    RangeControl,
+    SelectControl,
     ToggleControl,
     PanelBody,
-    SelectControl,
-    RangeControl
+    BlockControls,
+    __experimentalToolsPanel: ToolsPanel,
+    __experimentalToolsPanelItem: ToolsPanelItem
   } = wp.components;
   const {
     InspectorControls
   } = wp.blockEditor;
   const {
-    Fragment
-  } = wp.element;
+    createHigherOrderComponent
+  } = wp.compose;
   const {
-    select
-  } = wp.data;
+    addFilter
+  } = wp.hooks;
+  const pluginSlug = 'mediacontrols';
+  const supportedBlocks = ['core/video', 'core/cover'];
+  const settingsAttribute = `${pluginSlug}`;
+  const componentClass = `is-${pluginSlug}`;
+  const updateMessageType = 'updateMediacontrols';
+  const {
+    settings: globalSettings = {},
+    data: settingsData
+  } = window[`${pluginSlug}Settings`] || {};
+  const settingsSections = Object.keys(settingsData).reduce((acc, key) => {
+    const item = settingsData[key];
+    const section = item.section || 'general';
+    (acc[section] = acc[section] || {})[key] = item; // Initialize section and assign item
+    return acc;
+  }, {});
 
-  // Helper function to retrieve theme button colors from settings
-  const getButtonStylesFromSettings = () => {
-    const settings = select('core/block-editor').getSettings();
-    const buttonStyles = settings.styles?.blocks?.['core/button']?.default?.color || {};
-    const defaultBackground = buttonStyles.background || '#000000'; // Fallback to black
-    const defaultTextColor = buttonStyles.text || '#FFFFFF'; // Fallback to white
+  // Helper function to build the controlslist attribute value
+  const buildControlsList = (attributes, keys = ['fullscreenButton', 'overlayPlayButton', 'playButton', 'muteButton', 'timeline', 'volumeSlider', 'duration', 'currentTime']) => {
+    const controlsList = [];
+    keys.forEach(key => {
+      // Convert key to camelCase with 'show' prefix
+      const prop = `show${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+
+      // If the attribute is falsy, add the corresponding 'no' prefixed control name
+      if (!attributes[prop]) {
+        controlsList.push(`no${key.toLowerCase()}`);
+      }
+    });
+    return controlsList.join(' ');
+  };
+  const getWrapperProps = props => {
+    const {
+      attributes: {
+        [settingsAttribute]: settings,
+        controls
+      }
+    } = props;
+    const styles = {
+      '--x-controls-bg': settings.backgroundColor,
+      '--x-controls-bg-opacity': settings.backgroundOpacity / 100,
+      '--x-controls-color': settings.textColor,
+      '--x-controls-slide': settings.panelAnimation === 'slide' ? '1' : '0',
+      '--x-controls-fade': settings.panelAnimation === 'fade' ? '1' : '0'
+    };
     return {
-      defaultBackground,
-      defaultTextColor
+      className: componentClass,
+      'data-controls': typeof controls !== 'undefined' ? !!controls : undefined,
+      'data-controlslist': buildControlsList(settings),
+      style: Object.entries(styles).reduce((acc, [key, value]) => {
+        acc[key] = value;
+        return acc;
+      }, {})
     };
   };
-
-  // Function to check if a color is a valid CSS color or theme preset
-  const getColorValue = color => {
-    if (!color) {
-      return undefined;
+  const dispatchUpdateMessage = (enabled, filter) => {
+    const iframeWindow = document.querySelector('[name="editor-canvas"]').contentWindow;
+    if (iframeWindow) {
+      iframeWindow.postMessage({
+        type: updateMessageType
+      }, '*');
     }
-    if (color.startsWith('var(--wp--preset--color--')) {
-      return color; // Already in the correct format
-    }
-    const isCssColor = /^#[0-9A-F]{6}$|^#[0-9A-F]{3}$|^rgb\(|^rgba\(/i.test(color);
-    return isCssColor ? color : `var(--wp--preset--color--${color})`;
   };
 
-  // Add custom attributes for video controls
-  const addVideoControlAttributes = (settings, name) => {
-    if (name === 'core/video' || name === 'core/cover') {
+  // Add custom attributes
+  const addSettingsAttribute = (settings, name) => {
+    if (supportedBlocks.includes(name)) {
       settings.attributes = {
         ...settings.attributes,
-        showFullscreenButton: {
-          type: 'boolean',
-          default: true
-        },
-        showPlayButton: {
-          type: 'boolean',
-          default: true
-        },
-        showOverlayPlayButton: {
-          type: 'boolean',
-          default: true
-        },
-        showMuteButton: {
-          type: 'boolean',
-          default: true
-        },
-        showTimeline: {
-          type: 'boolean',
-          default: true
-        },
-        showVolumeSlider: {
-          type: 'boolean',
-          default: true
-        },
-        showDuration: {
-          type: 'boolean',
-          default: true
-        },
-        showCurrentTime: {
-          type: 'boolean',
-          default: true
-        },
-        backgroundColor: {
-          type: 'string',
-          default: 'var(--wp--preset--color--primary)'
-        },
-        textColor: {
-          type: 'string',
-          default: 'var(--wp--preset--color--white)'
-        },
-        panelAnimation: {
-          type: 'string',
-          default: 'slide'
-        },
-        panelOpacity: {
-          type: 'number',
-          default: 55
+        [settingsAttribute]: {
+          type: 'object',
+          default: {}
         }
       };
-
-      // settings.supports = {
-      //   ...(settings.supports || {}),
-      //   color: { background: true, text: true },
-      // };
     }
     return settings;
   };
 
   // Add filter to include the custom attributes
-  wp.hooks.addFilter('blocks.registerBlockType', 'custom/video-controls-attributes', addVideoControlAttributes);
-
-  // Helper function to build the controlslist attribute value
-  const buildControlsList = attributes => {
-    const {
-      showFullscreenButton,
-      showOverlayPlayButton,
-      showPlayButton,
-      showMuteButton,
-      showTimeline,
-      showVolumeSlider,
-      showDuration,
-      showCurrentTime
-    } = attributes;
-    const controlsList = [];
-    if (!showFullscreenButton) controlsList.push('nofullscreen');
-    if (!showOverlayPlayButton) controlsList.push('nooverlayplaybutton');
-    if (!showPlayButton) controlsList.push('noplaybutton');
-    if (!showMuteButton) controlsList.push('nomutebutton');
-    if (!showTimeline) controlsList.push('notimeline');
-    if (!showVolumeSlider) controlsList.push('novolumeslider');
-    if (!showDuration) controlsList.push('noduration');
-    if (!showCurrentTime) controlsList.push('nocurrenttime');
-    return controlsList.join(' ');
-  };
+  wp.hooks.addFilter('blocks.registerBlockType', `${pluginSlug}/settings`, addSettingsAttribute);
 
   // Extend BlockEdit to add custom controls to the sidebar
-  const addVideoControlInspector = createHigherOrderComponent(BlockEdit => {
+  const addSettingsControls = createHigherOrderComponent(BlockEdit => {
     return props => {
       const {
         attributes,
-        setAttributes
+        setAttributes,
+        name: blockName
       } = props;
-      const {
-        url
-      } = attributes;
-      const isSupportedBlock = props.name === 'core/video' || props.name === 'core/cover';
-      const isVideoSelected = props.name === 'core/video' || url && !IMAGE_FORMATS.includes(url.split('.').pop());
-      const showControls = attributes.controls && isVideoSelected;
-      if (isSupportedBlock) {
-        return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(BlockEdit, props), showControls && /*#__PURE__*/React.createElement(InspectorControls, null, /*#__PURE__*/React.createElement(PanelBody, {
-          title: "Media Controls Settings",
-          initialOpen: false
-        }, /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ToggleControl, {
-          label: "Fullscreen Button",
-          checked: attributes.showFullscreenButton,
-          onChange: value => setAttributes({
-            showFullscreenButton: value
-          })
-        }), /*#__PURE__*/React.createElement(ToggleControl, {
-          label: "Play Button",
-          checked: attributes.showPlayButton,
-          onChange: value => setAttributes({
-            showPlayButton: value
-          })
-        }), /*#__PURE__*/React.createElement(ToggleControl, {
-          label: "Overlay Play Button",
-          checked: attributes.showOverlayPlayButton,
-          onChange: value => setAttributes({
-            showOverlayPlayButton: value
-          })
-        }), /*#__PURE__*/React.createElement(ToggleControl, {
-          label: "Mute Button",
-          checked: attributes.showMuteButton,
-          onChange: value => setAttributes({
-            showMuteButton: value
-          })
-        }), /*#__PURE__*/React.createElement(ToggleControl, {
-          label: "Timeline",
-          checked: attributes.showTimeline,
-          onChange: value => setAttributes({
-            showTimeline: value
-          })
-        }), /*#__PURE__*/React.createElement(ToggleControl, {
-          label: "Volume Slider",
-          checked: attributes.showVolumeSlider,
-          onChange: value => setAttributes({
-            showVolumeSlider: value
-          })
-        }), /*#__PURE__*/React.createElement(ToggleControl, {
-          label: "Duration",
-          checked: attributes.showDuration,
-          onChange: value => setAttributes({
-            showDuration: value
-          })
-        }), /*#__PURE__*/React.createElement(ToggleControl, {
-          label: "Current Time",
-          checked: attributes.showCurrentTime,
-          onChange: value => setAttributes({
-            showCurrentTime: value
-          })
-        }), /*#__PURE__*/React.createElement(SelectControl, {
-          label: "Panel Animation",
-          value: attributes.panelAnimation,
-          options: [{
-            value: 'none',
-            label: 'None'
-          }, {
-            value: 'slide',
-            label: 'Slide'
-          }, {
-            value: 'fade',
-            label: 'Fade'
-          }, {
-            value: 'slide-and-fade',
-            label: 'Slide and Fade'
-          }],
-          onChange: value => setAttributes({
-            panelAnimation: value
-          })
-        }), /*#__PURE__*/React.createElement(RangeControl, {
-          label: "Panel Opacity",
-          value: attributes.panelOpacity,
-          onChange: value => setAttributes({
-            panelOpacity: value
-          }),
-          min: 0,
-          max: 100,
-          step: 1
-        })))));
+      const isSupportedBlock = supportedBlocks.includes(blockName);
+
+      // Handle cover block with video background
+      const isVideo = blockName === 'core/cover' ? attributes.backgroundType === 'video' : isSupportedBlock;
+      if (!isVideo) {
+        return /*#__PURE__*/React.createElement(BlockEdit, props);
       }
-      return /*#__PURE__*/React.createElement(BlockEdit, props);
-    };
-  }, 'withVideoControlInspector');
-  wp.hooks.addFilter('editor.BlockEdit', 'custom/video-controls-inspector', addVideoControlInspector);
-  const addSaveVideoElement = settings => {
-    if (settings.name === 'core/video' || settings.name === 'core/cover') {
-      const originalSave = settings.save;
-      settings.save = props => {
-        const {
-          attributes
-        } = props;
-        const controlsList = buildControlsList(attributes);
-
-        // Get theme's default button colors
-        const {
-          defaultBackground,
-          defaultTextColor
-        } = getButtonStylesFromSettings();
-        // const backgroundColor = getColorValue(attributes.backgroundColor) || getColorValue(defaultBackground);
-        // const textColor = getColorValue(attributes.textColor) || getColorValue(defaultTextColor);
-        const backgroundColor = getColorValue(defaultBackground);
-        const textColor = getColorValue(defaultTextColor);
-        const {
-          panelAnimation,
-          panelOpacity
-        } = attributes;
-        // Inline styles for x-mediacontrols
-        const style = {
-          '--x-controls-bg': backgroundColor,
-          '--x-controls-color': textColor,
-          '--x-controls-bg-opacity': String(panelOpacity / 100),
-          // Normalized to 0-1 for CSS
-          '--x-controls-slide': panelAnimation === 'slide' || panelAnimation === 'slide-and-fade' ? '1' : '0',
-          '--x-controls-fade': panelAnimation === 'fade' || panelAnimation === 'slide-and-fade' ? '1' : '0'
-        };
-
-        // Get the original save output
-        const originalOutput = originalSave({
-          ...props,
-          attributes: {
-            ...props.attributes,
-            // backgroundColor: undefined, // Exclude from saved attributes
-            // textColor: undefined,       // Exclude from saved attributes
-            controls: false // Disable default controls to avoid conflicts
-          }
-        });
-
-        // Clone the video element and wrap it in x-mediacontrols with overlay
-        const wrappedVideo = React.Children.map(originalOutput.props.children, child => {
-          // Check if the child is the video tag
-          if (React.isValidElement(child) && child.type === 'video') {
-            // Find the overlay (wp-block-cover__background) in the children
-            const overlay = React.Children.toArray(originalOutput.props.children).find(overlayChild => React.isValidElement(overlayChild) && overlayChild.props.className && overlayChild.props.className.includes('wp-block-cover__background'));
-
-            // Return the wrapped video
-            return /*#__PURE__*/React.createElement("x-mediacontrols", {
-              controls: attributes.controls,
-              controlslist: controlsList,
-              style: style,
-              className: "wp-block-video" // Ensure class matches expected output
-            }, overlay, child);
-          }
-          return child; // Return other children as they are
-        });
-
-        // Return the updated output
-        return React.cloneElement(originalOutput, {}, wrappedVideo);
+      const handleBlockRemove = removedBlock => {
+        dispatchUpdateMessage();
       };
-    }
-    return settings;
-  };
-  wp.hooks.addFilter('blocks.registerBlockType', 'custom/video-controls-save', addSaveVideoElement);
+      const updateSetting = (key, value) => {
+        if (value === null) {
+          const {
+            [key]: _,
+            ...newSettings
+          } = attributes[settingsAttribute];
+          setAttributes({
+            ...attributes,
+            [settingsAttribute]: newSettings
+          });
+          dispatchUpdateMessage();
+        } else {
+          setAttributes({
+            ...attributes,
+            [settingsAttribute]: {
+              ...attributes[settingsAttribute],
+              [key]: value
+            }
+          });
+        }
+        dispatchUpdateMessage();
+      };
+      const {
+        controls,
+        style: styles
+      } = settingsSections;
+      const resetAllStyles = () => {
+        const newSettings = Object.keys(settings).reduce((acc, key) => {
+          // Skip style properties
+          if (!settingsSections.style.hasOwnProperty(key)) {
+            acc[key] = settings[key]; // Keep the other fields intact
+          }
+          return acc;
+        }, {});
+        setAttributes({
+          [settingsAttribute]: newSettings
+        });
+        dispatchUpdateMessage();
+      };
+      const settings = {
+        ...globalSettings,
+        ...attributes[settingsAttribute]
+      };
+      return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(BlockEdit, props), /*#__PURE__*/React.createElement(BlockRemovalListener, {
+        onBlockRemove: handleBlockRemove
+      }), /*#__PURE__*/React.createElement(InspectorControls, null, /*#__PURE__*/React.createElement(PanelBody, {
+        title: __('Media Controls', 'mediacontrols'),
+        initialOpen: true
+      }, /*#__PURE__*/React.createElement(ToggleControl, {
+        label: __('Enable MediaControls', 'mediacontrols'),
+        checked: settings.enabled,
+        onChange: value => updateSetting('enabled', value)
+      }), settings.enabled && /*#__PURE__*/React.createElement(Fragment, null, Object.entries(controls).map(([key, {
+        name,
+        label,
+        type
+      }]) => /*#__PURE__*/React.createElement("div", {
+        key: name,
+        style: {
+          marginBottom: '10px'
+        }
+      }, renderControl({
+        type,
+        // Control type to render
+        label,
+        // Label for the control
+        checked: settings[key],
+        onChange: value => updateSetting(key, value)
+      })))))), settings.enabled && /*#__PURE__*/React.createElement(InspectorControls, {
+        group: "styles"
+      }, /*#__PURE__*/React.createElement(ToolsPanel, {
+        label: __('Media Controls'),
+        resetAll: resetAllStyles
+      }, Object.entries(styles).map(([key, {
+        name,
+        label,
+        type,
+        min,
+        max,
+        unit,
+        options = []
+      }]) => /*#__PURE__*/React.createElement(ToolsPanelItem, {
+        key: name,
+        hasValue: () => attributes[settingsAttribute][key] !== undefined,
+        label: label,
+        onDeselect: () => updateSetting(key, null) // Clear value when deselected
+        ,
+        onSelect: () => updateSetting(key, globalSettings[key]) // Set to global value when selected
+      }, renderControl({
+        type,
+        label,
+        value: settings[key],
+        options,
+        onChange: value => updateSetting(key, value),
+        min,
+        max,
+        unit
+      }))))));
+    };
+  }, 'withMediaControlsInspector');
+  wp.hooks.addFilter('editor.BlockEdit', `${pluginSlug}mediacontrols/controls`, addSettingsControls);
+  const withSettingsStyle = createHigherOrderComponent(BlockListBlock => {
+    return props => {
+      if (!supportedBlocks.includes(props.name)) {
+        return /*#__PURE__*/React.createElement(BlockListBlock, props);
+      }
+      const {
+        attributes: {
+          [settingsAttribute]: blockSettings,
+          controls = false
+        }
+      } = props;
+      const settings = {
+        ...globalSettings,
+        ...blockSettings
+      };
+      console.log('add settings style', props.name, settings.enabled, controls);
+      if (controls && settings.enabled) {
+        return /*#__PURE__*/React.createElement(BlockListBlock, _extends({}, props, {
+          wrapperProps: getWrapperProps(props)
+        }));
+      }
+      return /*#__PURE__*/React.createElement(BlockListBlock, props);
+    };
+  }, 'withMediaControlsSettingsStyle');
+  addFilter('editor.BlockListBlock', `${pluginSlug}/settings-style`, withSettingsStyle);
 
 })();

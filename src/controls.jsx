@@ -1,264 +1,267 @@
 import { IMAGE_FORMATS } from "./constants";
+import { BlockRemovalListener, renderControl } from "./utils.jsx";
 
-const { createHigherOrderComponent } = wp.compose;
-const { ToggleControl, PanelBody, SelectControl, RangeControl } = wp.components;
-const { InspectorControls } = wp.blockEditor;
+const { __ } = wp.i18n;
 const { Fragment } = wp.element;
-const { select } = wp.data;
+const {
+  RangeControl,
+  SelectControl,
+  ToggleControl,
+  PanelBody,
+  BlockControls,
+  __experimentalToolsPanel: ToolsPanel,
+  __experimentalToolsPanelItem: ToolsPanelItem,
+} = wp.components;
+const { InspectorControls } = wp.blockEditor;
+const { createHigherOrderComponent } = wp.compose;
+const { addFilter } = wp.hooks;
 
-// Helper function to retrieve theme button colors from settings
-const getButtonStylesFromSettings = () => {
-  const settings = select('core/block-editor').getSettings();
-  const buttonStyles = settings.styles?.blocks?.['core/button']?.default?.color || {};
-  const defaultBackground = buttonStyles.background || '#000000'; // Fallback to black
-  const defaultTextColor = buttonStyles.text || '#FFFFFF'; // Fallback to white
-  return { defaultBackground, defaultTextColor };
+const pluginSlug = 'mediacontrols';
+
+const supportedBlocks = ['core/video', 'core/cover'];
+const settingsAttribute = `${pluginSlug}`;
+const componentClass = `is-${pluginSlug}`;
+const updateMessageType = 'updateMediacontrols';
+
+const { settings: globalSettings = {}, data: settingsData } = window[`${pluginSlug}Settings`] || {};
+
+const settingsSections = Object.keys(settingsData).reduce((acc, key) => {
+  const item = settingsData[key];
+  const section = item.section || 'general';
+  (acc[section] = acc[section] || {})[key] = item; // Initialize section and assign item
+  return acc;
+}, {});
+
+// Helper function to build the controlslist attribute value
+const buildControlsList = (attributes, keys = [
+  'fullscreenButton', 
+  'overlayPlayButton', 
+  'playButton', 
+  'muteButton', 
+  'timeline', 
+  'volumeSlider', 
+  'duration', 
+  'currentTime'
+]) => {
+  const controlsList = [];
+
+  keys.forEach(key => {
+    // Convert key to camelCase with 'show' prefix
+    const prop = `show${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+    
+    // If the attribute is falsy, add the corresponding 'no' prefixed control name
+    if (!attributes[prop]) {
+      controlsList.push(`no${key.toLowerCase()}`);
+    }
+  });
+
+  return controlsList.join(' ');
 };
 
-// Function to check if a color is a valid CSS color or theme preset
-const getColorValue = (color) => {
-  if (!color) {
-    return undefined;
+const getWrapperProps = (props) => {
+  const { attributes: { [settingsAttribute]: settings, controls } } = props;
+  const styles = {
+    '--x-controls-bg': settings.backgroundColor,
+    '--x-controls-bg-opacity': settings.backgroundOpacity / 100,
+    '--x-controls-color': settings.textColor,
+    '--x-controls-slide': settings.panelAnimation === 'slide' ? '1' : '0',
+    '--x-controls-fade': settings.panelAnimation === 'fade' ? '1' : '0',
   }
 
-  if (color.startsWith('var(--wp--preset--color--')) {
-    return color; // Already in the correct format
+  return {
+    className: componentClass,
+    'data-controls': typeof controls !== 'undefined' ? !!controls : undefined,
+    'data-controlslist': buildControlsList(settings),
+    style: Object.entries(styles).reduce((acc, [key, value]) => {
+      acc[key] = value;
+      return acc;
+    }, {}),
   }
+}
 
-  const isCssColor = /^#[0-9A-F]{6}$|^#[0-9A-F]{3}$|^rgb\(|^rgba\(/i.test(color);
-  return isCssColor ? color : `var(--wp--preset--color--${color})`;
+const dispatchUpdateMessage = (enabled, filter) => {
+  const iframeWindow = document.querySelector('[name="editor-canvas"]').contentWindow;
+  if (iframeWindow) {
+      iframeWindow.postMessage({ type: updateMessageType }, '*');
+  }
 };
 
-// Add custom attributes for video controls
-const addVideoControlAttributes = (settings, name) => {
-  if (name === 'core/video' || name === 'core/cover') {
+// Add custom attributes
+const addSettingsAttribute = (settings, name) => {
+  if (supportedBlocks.includes(name)) {
     settings.attributes = {
       ...settings.attributes,
-      showFullscreenButton: { type: 'boolean', default: true },
-      showPlayButton: { type: 'boolean', default: true },
-      showOverlayPlayButton: { type: 'boolean', default: true },
-      showMuteButton: { type: 'boolean', default: true },
-      showTimeline: { type: 'boolean', default: true },
-      showVolumeSlider: { type: 'boolean', default: true },
-      showDuration: { type: 'boolean', default: true },
-      showCurrentTime: { type: 'boolean', default: true },
-      backgroundColor: { type: 'string', default: 'var(--wp--preset--color--primary)' },
-      textColor: { type: 'string', default: 'var(--wp--preset--color--white)' },
-      panelAnimation: { type: 'string', default: 'slide' },
-      panelOpacity: { type: 'number', default: 55 },
+      [settingsAttribute]: { type: 'object', default: {} },
     };
-
-    // settings.supports = {
-    //   ...(settings.supports || {}),
-    //   color: { background: true, text: true },
-    // };
   }
+
   return settings;
 };
 
 // Add filter to include the custom attributes
 wp.hooks.addFilter(
   'blocks.registerBlockType',
-  'custom/video-controls-attributes',
-  addVideoControlAttributes
+  `${pluginSlug}/settings`,
+  addSettingsAttribute
 );
 
-// Helper function to build the controlslist attribute value
-const buildControlsList = (attributes) => {
-  const {
-    showFullscreenButton,
-    showOverlayPlayButton,
-    showPlayButton,
-    showMuteButton,
-    showTimeline,
-    showVolumeSlider,
-    showDuration,
-    showCurrentTime,
-  } = attributes;
-
-  const controlsList = [];
-
-  if (!showFullscreenButton) controlsList.push('nofullscreen');
-  if (!showOverlayPlayButton) controlsList.push('nooverlayplaybutton');
-  if (!showPlayButton) controlsList.push('noplaybutton');
-  if (!showMuteButton) controlsList.push('nomutebutton');
-  if (!showTimeline) controlsList.push('notimeline');
-  if (!showVolumeSlider) controlsList.push('novolumeslider');
-  if (!showDuration) controlsList.push('noduration');
-  if (!showCurrentTime) controlsList.push('nocurrenttime');
-
-  return controlsList.join(' ');
-};
-
 // Extend BlockEdit to add custom controls to the sidebar
-const addVideoControlInspector = createHigherOrderComponent((BlockEdit) => {
+const addSettingsControls = createHigherOrderComponent((BlockEdit) => {
   return (props) => {
-    const { attributes, setAttributes } = props;
+    const { attributes, setAttributes, name: blockName } = props;
     const { url } = attributes;
 
-    const isSupportedBlock = props.name === 'core/video' || props.name === 'core/cover';
-    const isVideoSelected = props.name === 'core/video' || url && !IMAGE_FORMATS.includes(url.split('.').pop());
-    const showControls = attributes.controls && isVideoSelected;
+    const isSupportedBlock = supportedBlocks.includes(blockName);
 
-    if (isSupportedBlock) {
-      return (
-        <Fragment>
-          <BlockEdit {...props} />
-          {showControls && (
-            <InspectorControls>
-              <PanelBody title="Media Controls Settings" initialOpen={false}>
-                
-                  <>
-                    <ToggleControl
-                      label="Fullscreen Button"
-                      checked={attributes.showFullscreenButton}
-                      onChange={(value) => setAttributes({ showFullscreenButton: value })}
-                    />
-                    <ToggleControl
-                      label="Play Button"
-                      checked={attributes.showPlayButton}
-                      onChange={(value) => setAttributes({ showPlayButton: value })}
-                    />
-                    <ToggleControl
-                      label="Overlay Play Button"
-                      checked={attributes.showOverlayPlayButton}
-                      onChange={(value) => setAttributes({ showOverlayPlayButton: value })}
-                    />
-                    <ToggleControl
-                      label="Mute Button"
-                      checked={attributes.showMuteButton}
-                      onChange={(value) => setAttributes({ showMuteButton: value })}
-                    />
-                    <ToggleControl
-                      label="Timeline"
-                      checked={attributes.showTimeline}
-                      onChange={(value) => setAttributes({ showTimeline: value })}
-                    />
-                    <ToggleControl
-                      label="Volume Slider"
-                      checked={attributes.showVolumeSlider}
-                      onChange={(value) => setAttributes({ showVolumeSlider: value })}
-                    />
-                    <ToggleControl
-                      label="Duration"
-                      checked={attributes.showDuration}
-                      onChange={(value) => setAttributes({ showDuration: value })}
-                    />
-                    <ToggleControl
-                      label="Current Time"
-                      checked={attributes.showCurrentTime}
-                      onChange={(value) => setAttributes({ showCurrentTime: value })}
-                    />
-                    <SelectControl
-                      label="Panel Animation"
-                      value={attributes.panelAnimation}
-                      options={[
-                        { value: 'none', label: 'None' },
-                        { value: 'slide', label: 'Slide' },
-                        { value: 'fade', label: 'Fade' },
-                        { value: 'slide-and-fade', label: 'Slide and Fade' },
-                      ]}
-                      onChange={(value) => setAttributes({ panelAnimation: value })}
-                    />
-                    <RangeControl
-                      label="Panel Opacity"
-                      value={attributes.panelOpacity}
-                      onChange={(value) => setAttributes({ panelOpacity: value })}
-                      min={0}
-                      max={100}
-                      step={1}
-                    />
-                  </>
-              </PanelBody>
-            </InspectorControls>
-          )}
-        </Fragment>
-      );
+    // Handle cover block with video background
+    const isVideo = blockName === 'core/cover' ? attributes.backgroundType === 'video' : isSupportedBlock;
+
+    if (!isVideo) {
+      return <BlockEdit {...props} />;
     }
 
-    return <BlockEdit {...props} />;
+    const handleBlockRemove = (removedBlock) => {
+      dispatchUpdateMessage();
+    };
+
+    const updateSetting = (key, value) => {
+      if (value === null) {
+          const { [key]: _, ...newSettings } = attributes[settingsAttribute];
+
+          setAttributes({ ...attributes, [settingsAttribute]: newSettings });
+          dispatchUpdateMessage();
+      } else {
+          setAttributes({
+            ...attributes,
+            [settingsAttribute]: {
+              ...attributes[settingsAttribute],
+              [key]: value
+            }
+          });
+      }
+
+      dispatchUpdateMessage();
+    };
+
+    const { controls, style: styles } = settingsSections;
+
+    const resetAllStyles = () => {
+      const newSettings = Object.keys(settings).reduce((acc, key) => {
+          // Skip style properties
+          if (!settingsSections.style.hasOwnProperty(key)) {
+              acc[key] = settings[key]; // Keep the other fields intact
+          }
+          return acc;
+      }, {});
+  
+      setAttributes({
+          [settingsAttribute]: newSettings,
+      });
+  
+      dispatchUpdateMessage();
+    };
+
+    const settings = {
+      ...globalSettings, 
+      ...attributes[settingsAttribute],
+    }
+ 
+    return (
+      <Fragment>
+        <BlockEdit {...props} />
+        <BlockRemovalListener onBlockRemove={handleBlockRemove} />
+        <InspectorControls>
+          <PanelBody title={__('Media Controls', 'mediacontrols')} initialOpen={true}>
+            <ToggleControl
+              label={__('Enable MediaControls', 'mediacontrols')}
+              checked={settings.enabled}
+              onChange={(value) => updateSetting('enabled', value)}
+            />
+
+            {/* Only show these controls if "enabled" is true */}
+            {settings.enabled && (
+              <Fragment>
+                {Object.entries(controls).map(([key, { name, label, type }]) => (
+                  <div key={name} style={{ marginBottom: '10px' }}>
+                    {renderControl({
+                      type, // Control type to render
+                      label, // Label for the control
+                      checked: settings[key],
+                      onChange: (value) => updateSetting(key, value),
+                    })}
+                  </div>
+                ))}
+              </Fragment>
+            )}
+          </PanelBody>
+        </InspectorControls>
+        {settings.enabled && (
+          <InspectorControls group="styles">
+            <ToolsPanel
+              label={__('Media Controls')}
+              resetAll={resetAllStyles}
+            >
+              {Object.entries(styles).map(([key, { name, label, type, min, max, unit, options = [] }]) => (
+                <ToolsPanelItem
+                  key={name}
+                  hasValue={() => attributes[settingsAttribute][key] !== undefined}
+                  label={label}
+                  onDeselect={() => updateSetting(key, null)} // Clear value when deselected
+                  onSelect={() => updateSetting(key, globalSettings[key])} // Set to global value when selected
+                >
+                  {renderControl({
+                    type,
+                    label,
+                    value: settings[key],
+                    options,
+                    onChange: (value) => updateSetting(key, value),
+                    min,
+                    max,
+                    unit,
+                  })}
+                </ToolsPanelItem>
+              ))}
+            </ToolsPanel>
+          </InspectorControls>
+        )}
+      </Fragment>
+    );
   };
-}, 'withVideoControlInspector');
+}, 'withMediaControlsInspector');
 
 wp.hooks.addFilter(
   'editor.BlockEdit',
-  'custom/video-controls-inspector',
-  addVideoControlInspector
+  `${pluginSlug}mediacontrols/controls`,
+  addSettingsControls
 );
 
-const addSaveVideoElement = (settings) => {
-  if (settings.name === 'core/video' || settings.name === 'core/cover') {
-    const originalSave = settings.save;
+const withSettingsStyle = createHigherOrderComponent((BlockListBlock) => {
+  return (props) => {
+      if (!supportedBlocks.includes(props.name)) {
+          return <BlockListBlock {...props} />;
+      }
 
-    settings.save = (props) => {
-      const { attributes } = props;
-      const controlsList = buildControlsList(attributes);
+      const { attributes: { [settingsAttribute]: blockSettings, controls = false } } = props;
+      const settings = {
+        ...globalSettings,
+        ...blockSettings
+      }
 
-      // Get theme's default button colors
-      const { defaultBackground, defaultTextColor } = getButtonStylesFromSettings();
-      // const backgroundColor = getColorValue(attributes.backgroundColor) || getColorValue(defaultBackground);
-      // const textColor = getColorValue(attributes.textColor) || getColorValue(defaultTextColor);
-      const backgroundColor = getColorValue(defaultBackground);
-      const textColor = getColorValue(defaultTextColor);
+      console.log('add settings style', props.name, settings.enabled, controls);
 
-      const { panelAnimation, panelOpacity } = attributes;
-      // Inline styles for x-mediacontrols
-      const style = {
-        '--x-controls-bg': backgroundColor,
-        '--x-controls-color': textColor,
-        '--x-controls-bg-opacity': String(panelOpacity / 100), // Normalized to 0-1 for CSS
-        '--x-controls-slide': panelAnimation === 'slide' || panelAnimation === 'slide-and-fade' ? '1' : '0',
-        '--x-controls-fade': panelAnimation === 'fade' || panelAnimation === 'slide-and-fade' ? '1' : '0',
-      };
+      if (controls && settings.enabled) {
+        return (
+          <BlockListBlock {...props} wrapperProps={getWrapperProps(props)} />
+        );
+      }
 
-      // Get the original save output
-      const originalOutput = originalSave({
-        ...props,
-        attributes: {
-          ...props.attributes,
-          // backgroundColor: undefined, // Exclude from saved attributes
-          // textColor: undefined,       // Exclude from saved attributes
-          controls: false,            // Disable default controls to avoid conflicts
-        },
-      });
+      return <BlockListBlock {...props} />;
+  };
+}, 'withMediaControlsSettingsStyle');
 
-      // Clone the video element and wrap it in x-mediacontrols with overlay
-      const wrappedVideo = React.Children.map(originalOutput.props.children, (child) => {
-        // Check if the child is the video tag
-        if (React.isValidElement(child) && child.type === 'video') {
-          // Find the overlay (wp-block-cover__background) in the children
-          const overlay = React.Children.toArray(originalOutput.props.children).find(
-            (overlayChild) => 
-              React.isValidElement(overlayChild) && 
-              overlayChild.props.className && 
-              overlayChild.props.className.includes('wp-block-cover__background')
-          );
 
-          // Return the wrapped video
-          return (
-            <x-mediacontrols
-              controls={attributes.controls}
-              controlslist={controlsList}
-              style={style}
-              className="wp-block-video" // Ensure class matches expected output
-            >
-              {overlay}
-              {child} 
-            </x-mediacontrols>
-          );
-        }
-        return child; // Return other children as they are
-      });
-
-      // Return the updated output
-      return React.cloneElement(originalOutput, {}, wrappedVideo);
-    };
-  }
-  return settings;
-};
-
-wp.hooks.addFilter(
-  'blocks.registerBlockType',
-  'custom/video-controls-save',
-  addSaveVideoElement
+addFilter(
+  'editor.BlockListBlock',
+  `${pluginSlug}/settings-style`,
+  withSettingsStyle
 );

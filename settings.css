@@ -1,0 +1,51 @@
+.mc-switch-wrapper {
+  display: inline-flex;
+}
+
+.mc-switch-wrapper input[type=checkbox].mc-switch-input {
+  display: none; /* Hide the default checkbox */
+}
+
+.mc-switch-label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.mc-switch-slider {
+  display: inline-block;
+  position: relative;
+  width: 40px; /* Size of the switch */
+  height: 20px; /* Size of the switch */
+  background-color: #ccc; /* Default color */
+  border-radius: 20px;
+  transition: background-color 0.3s;
+  margin-right: 10px; /* Space between switch and label */
+}
+
+.mc-switch-slider:before {
+  content: '';
+  position: absolute;
+  width: 16px; /* Size of the slider */
+  height: 16px; /* Size of the slider */
+  border-radius: 50%;
+  background-color: white;
+  transition: transform 0.3s;
+  top: 2px; /* Center the slider */
+  left: 2px; /* Center the slider */
+}
+
+.mc-switch-wrapper input[type=checkbox].mc-switch-input:checked + .mc-switch-slider {
+  background-color: #0073aa; /* WordPress blue when checked */
+}
+
+.mc-switch-wrapper input[type=checkbox].mc-switch-input:checked + .mc-switch-slider:before {
+  transform: translateX(20px); /* Move the slider */
+}
+
+.mc-settings-preview {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  max-width: 520px;
+}
