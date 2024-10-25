@@ -1,7 +1,3 @@
-import { IMAGE_FORMATS } from "./constants";
-/**
- * WordPress dependencies
- */
 const { addFilter } = wp.hooks;
 const { Fragment, cloneElement, Children } = wp.element;
 const { InspectorControls } = wp.blockEditor;

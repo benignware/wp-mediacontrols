@@ -1,14 +1,18 @@
-import { IMAGE_FORMATS } from "./constants";
+import {
+  PLUGIN_SLUG,
+  SUPPORTED_BLOCKS,
+  SETTINGS_ATTRIBUTE,
+  SETTINGS_LABEL,
+  UPDATE_MESSAGE_TYPE
+} from "./constants";
 import { BlockRemovalListener, renderControl } from "./utils.jsx";
+import { getWrapperProps } from "./functions";
 
 const { __ } = wp.i18n;
 const { Fragment } = wp.element;
 const {
-  RangeControl,
-  SelectControl,
   ToggleControl,
   PanelBody,
-  BlockControls,
   __experimentalToolsPanel: ToolsPanel,
   __experimentalToolsPanelItem: ToolsPanelItem,
 } = wp.components;
@@ -16,14 +20,7 @@ const { InspectorControls } = wp.blockEditor;
 const { createHigherOrderComponent } = wp.compose;
 const { addFilter } = wp.hooks;
 
-const pluginSlug = 'mediacontrols';
-
-const supportedBlocks = ['core/video', 'core/cover'];
-const settingsAttribute = `${pluginSlug}`;
-const componentClass = `is-${pluginSlug}`;
-const updateMessageType = 'updateMediacontrols';
-
-const { settings: globalSettings = {}, data: settingsData } = window[`${pluginSlug}Settings`] || {};
+const { settings: globalSettings = {}, schema: settingsData } = window[`${PLUGIN_SLUG}Settings`] || {};
 
 const settingsSections = Object.keys(settingsData).reduce((acc, key) => {
   const item = settingsData[key];
@@ -32,66 +29,19 @@ const settingsSections = Object.keys(settingsData).reduce((acc, key) => {
   return acc;
 }, {});
 
-// Helper function to build the controlslist attribute value
-const buildControlsList = (attributes, keys = [
-  'fullscreenButton', 
-  'overlayPlayButton', 
-  'playButton', 
-  'muteButton', 
-  'timeline', 
-  'volumeSlider', 
-  'duration', 
-  'currentTime'
-]) => {
-  const controlsList = [];
-
-  keys.forEach(key => {
-    // Convert key to camelCase with 'show' prefix
-    const prop = `show${key.charAt(0).toUpperCase()}${key.slice(1)}`;
-    
-    // If the attribute is falsy, add the corresponding 'no' prefixed control name
-    if (!attributes[prop]) {
-      controlsList.push(`no${key.toLowerCase()}`);
-    }
-  });
-
-  return controlsList.join(' ');
-};
-
-const getWrapperProps = (props) => {
-  const { attributes: { [settingsAttribute]: settings, controls } } = props;
-  const styles = {
-    '--x-controls-bg': settings.backgroundColor,
-    '--x-controls-bg-opacity': settings.backgroundOpacity / 100,
-    '--x-controls-color': settings.textColor,
-    '--x-controls-slide': settings.panelAnimation === 'slide' ? '1' : '0',
-    '--x-controls-fade': settings.panelAnimation === 'fade' ? '1' : '0',
-  }
-
-  return {
-    className: componentClass,
-    'data-controls': typeof controls !== 'undefined' ? !!controls : undefined,
-    'data-controlslist': buildControlsList(settings),
-    style: Object.entries(styles).reduce((acc, [key, value]) => {
-      acc[key] = value;
-      return acc;
-    }, {}),
-  }
-}
-
 const dispatchUpdateMessage = (enabled, filter) => {
   const iframeWindow = document.querySelector('[name="editor-canvas"]').contentWindow;
   if (iframeWindow) {
-      iframeWindow.postMessage({ type: updateMessageType }, '*');
+      iframeWindow.postMessage({ type: UPDATE_MESSAGE_TYPE }, '*');
   }
 };
 
 // Add custom attributes
 const addSettingsAttribute = (settings, name) => {
-  if (supportedBlocks.includes(name)) {
+  if (SUPPORTED_BLOCKS.includes(name)) {
     settings.attributes = {
       ...settings.attributes,
-      [settingsAttribute]: { type: 'object', default: {} },
+      [SETTINGS_ATTRIBUTE]: { type: 'object', default: {} },
     };
   }
 
@@ -101,7 +51,7 @@ const addSettingsAttribute = (settings, name) => {
 // Add filter to include the custom attributes
 wp.hooks.addFilter(
   'blocks.registerBlockType',
-  `${pluginSlug}/settings`,
+  `${PLUGIN_SLUG}/settings`,
   addSettingsAttribute
 );
 
@@ -109,9 +59,8 @@ wp.hooks.addFilter(
 const addSettingsControls = createHigherOrderComponent((BlockEdit) => {
   return (props) => {
     const { attributes, setAttributes, name: blockName } = props;
-    const { url } = attributes;
 
-    const isSupportedBlock = supportedBlocks.includes(blockName);
+    const isSupportedBlock = SUPPORTED_BLOCKS.includes(blockName);
 
     // Handle cover block with video background
     const isVideo = blockName === 'core/cover' ? attributes.backgroundType === 'video' : isSupportedBlock;
@@ -126,15 +75,15 @@ const addSettingsControls = createHigherOrderComponent((BlockEdit) => {
 
     const updateSetting = (key, value) => {
       if (value === null) {
-          const { [key]: _, ...newSettings } = attributes[settingsAttribute];
+          const { [key]: _, ...newSettings } = attributes[SETTINGS_ATTRIBUTE];
 
-          setAttributes({ ...attributes, [settingsAttribute]: newSettings });
+          setAttributes({ ...attributes, [SETTINGS_ATTRIBUTE]: newSettings });
           dispatchUpdateMessage();
       } else {
           setAttributes({
             ...attributes,
-            [settingsAttribute]: {
-              ...attributes[settingsAttribute],
+            [SETTINGS_ATTRIBUTE]: {
+              ...attributes[SETTINGS_ATTRIBUTE],
               [key]: value
             }
           });
@@ -155,7 +104,7 @@ const addSettingsControls = createHigherOrderComponent((BlockEdit) => {
       }, {});
   
       setAttributes({
-          [settingsAttribute]: newSettings,
+          [SETTINGS_ATTRIBUTE]: newSettings,
       });
   
       dispatchUpdateMessage();
@@ -163,17 +112,19 @@ const addSettingsControls = createHigherOrderComponent((BlockEdit) => {
 
     const settings = {
       ...globalSettings, 
-      ...attributes[settingsAttribute],
+      ...attributes[SETTINGS_ATTRIBUTE],
     }
+
+    const enabledLabel = settings.enabled ? __('Enabled') : __('Disabled');
  
     return (
       <Fragment>
         <BlockEdit {...props} />
         <BlockRemovalListener onBlockRemove={handleBlockRemove} />
         <InspectorControls>
-          <PanelBody title={__('Media Controls', 'mediacontrols')} initialOpen={true}>
+          <PanelBody title={SETTINGS_LABEL} initialOpen={true}>
             <ToggleControl
-              label={__('Enable MediaControls', 'mediacontrols')}
+              label={enabledLabel}
               checked={settings.enabled}
               onChange={(value) => updateSetting('enabled', value)}
             />
@@ -184,8 +135,8 @@ const addSettingsControls = createHigherOrderComponent((BlockEdit) => {
                 {Object.entries(controls).map(([key, { name, label, type }]) => (
                   <div key={name} style={{ marginBottom: '10px' }}>
                     {renderControl({
-                      type, // Control type to render
-                      label, // Label for the control
+                      type,
+                      label,
                       checked: settings[key],
                       onChange: (value) => updateSetting(key, value),
                     })}
@@ -198,13 +149,13 @@ const addSettingsControls = createHigherOrderComponent((BlockEdit) => {
         {settings.enabled && (
           <InspectorControls group="styles">
             <ToolsPanel
-              label={__('Media Controls')}
+              label={__(SETTINGS_LABEL)}
               resetAll={resetAllStyles}
             >
               {Object.entries(styles).map(([key, { name, label, type, min, max, unit, options = [] }]) => (
                 <ToolsPanelItem
                   key={name}
-                  hasValue={() => attributes[settingsAttribute][key] !== undefined}
+                  hasValue={() => attributes[SETTINGS_ATTRIBUTE][key] !== undefined}
                   label={label}
                   onDeselect={() => updateSetting(key, null)} // Clear value when deselected
                   onSelect={() => updateSetting(key, globalSettings[key])} // Set to global value when selected
@@ -231,27 +182,29 @@ const addSettingsControls = createHigherOrderComponent((BlockEdit) => {
 
 wp.hooks.addFilter(
   'editor.BlockEdit',
-  `${pluginSlug}mediacontrols/controls`,
+  `${PLUGIN_SLUG}mediacontrols/controls`,
   addSettingsControls
 );
 
 const withSettingsStyle = createHigherOrderComponent((BlockListBlock) => {
   return (props) => {
-      if (!supportedBlocks.includes(props.name)) {
+      if (!SUPPORTED_BLOCKS.includes(props.name)) {
           return <BlockListBlock {...props} />;
       }
 
-      const { attributes: { [settingsAttribute]: blockSettings, controls = false } } = props;
+      const { attributes: { [SETTINGS_ATTRIBUTE]: blockSettings, controls = false } } = props;
       const settings = {
-        ...globalSettings,
+        // ...globalSettings,
         ...blockSettings
       }
 
-      console.log('add settings style', props.name, settings.enabled, controls);
+      const wrapperProps = getWrapperProps(props);
 
-      if (controls && settings.enabled) {
+      console.log('wrapper props', wrapperProps);
+
+      if (settings.enabled) {
         return (
-          <BlockListBlock {...props} wrapperProps={getWrapperProps(props)} />
+          <BlockListBlock {...props} wrapperProps={wrapperProps} />
         );
       }
 
@@ -262,6 +215,6 @@ const withSettingsStyle = createHigherOrderComponent((BlockListBlock) => {
 
 addFilter(
   'editor.BlockListBlock',
-  `${pluginSlug}/settings-style`,
+  `${PLUGIN_SLUG}/settings-style`,
   withSettingsStyle
 );

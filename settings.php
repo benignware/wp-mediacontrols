@@ -2,22 +2,6 @@
 
 namespace benignware\wp\mediacontrols;
 
-
-
-add_action('admin_enqueue_scripts', __NAMESPACE__ . '\\enqueue_settings_scripts');
-
-function get_plugin_name() {
-    return 'Media Controls';
-}
-
-function get_plugin_slug() {
-    return 'mediacontrols';
-}
-
-function get_plugin_textdomain() {
-    return get_plugin_slug();
-}
-
 function add_settings_page() {
     add_theme_page(
         __('Media Controls Settings', get_plugin_textdomain()), // Replaced 'text-domain'
@@ -28,7 +12,6 @@ function add_settings_page() {
     );
 }
 add_action('admin_menu', __NAMESPACE__ . '\\add_settings_page');
-
 
 function render_settings_page() {
     $options = get_settings();
@@ -56,9 +39,8 @@ function render_settings_page() {
     <?php
 }
 
-
 function register_settings() {
-    $settings_data = get_settings_data();
+    $settings_data = get_settings_schema();
 
     register_setting(
         get_plugin_slug() . '_settings_group', // Replaced 'mediacontrols_settings_group'
@@ -100,7 +82,7 @@ add_action('admin_init', __NAMESPACE__ . '\\register_settings');
 
 function sanitize_settings($input) {
     $output = [];
-    $settings_data = get_settings_data();
+    $settings_data = get_settings_schema();
 
     foreach ($settings_data as $setting_id => $setting) {
         $type = $setting['type'];
@@ -121,6 +103,7 @@ function sanitize_settings($input) {
                 $output[$setting_id] = sanitize_hex_color($value);
                 break;
             case 'range':
+            case 'number':
                 $output[$setting_id] = intval($value);
                 break;
             case 'select':
@@ -137,7 +120,7 @@ function render_field_by_type($args) {
     $setting_id = $args['id'];
     $setting = $args['setting'];
     $options = get_option(get_plugin_slug() . '_settings');
-    $value = isset($options[$setting_id]) ? $options[$setting_id] : $setting['default'];
+    $value = $options[$setting_id] ?? null;
 
     switch ($setting['type']) {
         case 'boolean':
@@ -146,6 +129,7 @@ function render_field_by_type($args) {
         case 'color':
             render_color_picker(['id' => $setting_id, 'default' => $setting['default'], 'value' => $value]);
             break;
+        case 'number':
         case 'range':
             render_range_field([
                 'id' => $setting_id, 
@@ -167,32 +151,12 @@ function render_field_by_type($args) {
     }
 }
 
-function get_settings() {
-    $settings = get_option(get_plugin_slug() . '_settings', []);
-    $defaults = get_default_settings();
-
-    return array_merge($defaults, $settings);
-}
-
-function get_custom_settings() {
-    return get_option('mediacontrols_settings', []);
-}
-
-// Get default settings
-function get_default_settings() {
-    $settings_data = get_settings_data();
-    return array_reduce(array_keys($settings_data), function($defaults, $key) use ($settings_data) {
-        $defaults[$key] = $settings_data[$key]['default'];
-        return $defaults;
-    }, []);
-}
 
 function render_switch_field($args) {
-    $options = get_custom_settings();
-    $custom = isset($options[$args['id']]) ? $options[$args['id']] : null;
+    $id = esc_attr($args['id']);
+    $custom = $args['value'] ?? null;
     $value = $custom !== null ? $custom : $args['default'];
     $disabled = $custom === null ? 'disabled' : '';
-    $id = esc_attr($args['id']);
     $checked = $value ? 'checked' : '';
     ?>
     <label class="mc-switch-wrapper" for="<?php echo $id; ?>">
@@ -204,13 +168,11 @@ function render_switch_field($args) {
     <?php
 }
 
-
 function render_color_picker($args) {
-    $options = get_custom_settings();
-    $custom = isset($options[$args['id']]) ? $options[$args['id']] : null;
+    $id = esc_attr($args['id']);
+    $custom = $args['value'] ?? null;
     $value = $custom !== null ? $custom : $args['default'];
     $disabled = $custom === null ? 'disabled' : '';
-    $id = esc_attr($args['id']); 
     ?>
     <input data-sync="<?= $id ?>" type="color" id="<?php echo $id; ?>" value="<?php echo esc_attr($value); ?>" />
     <input data-sync="<?= $id ?>" type="hidden" name="<?php echo get_plugin_slug(); ?>_settings[<?php echo $id; ?>]" id="<?php echo $id; ?>_hidden" value="<?php echo esc_attr($custom); ?>" data-default="<?php echo esc_attr($args['default']); ?>" <?= $disabled ?> />
@@ -218,11 +180,10 @@ function render_color_picker($args) {
 }
 
 function render_range_field($args) {
-    $options = get_custom_settings();
-    $custom = isset($options[$args['id']]) ? $options[$args['id']] : null;
+    $id = esc_attr($args['id']);
+    $custom = $args['value'] ?? null;
     $value = $custom !== null ? $custom : $args['default'];
     $disabled = $custom === null ? 'disabled' : '';
-    $id = esc_attr($args['id']); 
     ?>
     <input data-sync="<?= $id ?>" type="range" id="<?php echo $id; ?>_range" min="<?php echo esc_attr($args['min']); ?>" max="<?php echo esc_attr($args['max']); ?>" value="<?php echo esc_attr($value); ?>" data-unit="<?php echo esc_attr($args['unit']); ?>" />
     <input data-sync="<?= $id ?>" type="number" id="<?php echo $id; ?>_number" min="<?php echo esc_attr($args['min']); ?>" max="<?php echo esc_attr($args['max']); ?>" value="<?php echo esc_attr($value); ?>" placeholder="<?php echo esc_attr($args['default']); ?>" data-unit="<?php echo esc_attr($args['unit']); ?>" />
@@ -230,13 +191,11 @@ function render_range_field($args) {
     <?php
 }
 
-
 function render_select_field($args) {
-    $options = get_custom_settings();
-    $custom = isset($options[$args['id']]) ? $options[$args['id']] : null;
+    $id = esc_attr($args['id']);
+    $custom = $args['value'] ?? null;
     $value = $custom !== null ? $custom : $args['default'];
     $disabled = $custom === null ? 'disabled' : '';
-    $id = esc_attr($args['id']); 
     ?>
     <select data-sync="<?= $id ?>" id="<?php echo $id; ?>">
         <?php foreach ($args['options'] as $option) : ?>
@@ -247,7 +206,6 @@ function render_select_field($args) {
     <?php
 }
 
-
 function enqueue_settings_scripts($hook) {
     if ($hook !== 'appearance_page_' . get_plugin_slug() . '-settings') {
         return;
@@ -255,7 +213,7 @@ function enqueue_settings_scripts($hook) {
 
     wp_enqueue_script(
         get_plugin_slug() . '-settings',
-        plugins_url('settings.js', __FILE__),
+        plugins_url('dist/' . get_plugin_slug() . '-settings.js', __FILE__),
         [],
         null,
         true
@@ -263,7 +221,7 @@ function enqueue_settings_scripts($hook) {
 
     wp_enqueue_style(
         get_plugin_slug() . '-settings',
-        plugins_url('settings.css', __FILE__),
+        plugins_url('dist/' . get_plugin_slug() . '-settings.css', __FILE__),
         [],
         null
     );
@@ -282,8 +240,16 @@ function enqueue_settings_scripts($hook) {
         [],
         null
     );
-}
 
+    wp_enqueue_script(
+        get_plugin_slug() . '-preview',
+        plugins_url('dist/' . get_plugin_slug() . '-preview.js', __FILE__),
+        [],
+        null,
+        true
+    );
+}
+add_action('admin_enqueue_scripts', __NAMESPACE__ . '\\enqueue_settings_scripts');
 
 function render_preview_section() {
     $options = get_settings();
@@ -293,14 +259,18 @@ function render_preview_section() {
     ?>
     <!-- Preview Section -->
     <h2><?php _e('Preview', get_plugin_textdomain()); ?></h2>
-    <p id="<?= get_plugin_slug() ?>-preview" class="<?= $options['enabled'] ? 'is-' . get_plugin_slug() : '' ?> " style="
+    <div id="<?= get_plugin_slug() ?>-preview" class="<?= $options['enabled'] ? 'is-' . get_plugin_slug() : '' ?> " style="
         display: flex;
         align-items: center;
         margin-bottom: 10px;
         max-width: 520px;
     ">
-        <video src="<?php echo esc_url(plugins_url('assets/example.mp4', __FILE__)); ?>" controls></video>
-    </p>
+        <video
+            style="width: 100%; height: auto;"
+            src="<?php echo esc_url(plugins_url('assets/example.mp4', __FILE__)); ?>"
+            controls
+        ></video>
+    </div>
     <?php
 
     $output = ob_get_clean();

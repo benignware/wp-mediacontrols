@@ -5,14 +5,14 @@ import babel from '@rollup/plugin-babel';
 
 export default [
     {
-        input: 'src/editor.jsx', // Editor script entry point
+        input: 'src/editor.jsx',
         output: [{
             file: 'dist/mediacontrols-editor.js',
             format: 'iife',
             name: 'MediaControlsEditor',
             globals: {
-                'react': 'wp.element', // Use WordPress' React version
-                'react-dom': 'wp.element' // Adjust if necessary
+                'react': 'wp.element',
+                'react-dom': 'wp.element'
             }
         }],
         plugins: [
@@ -25,6 +25,31 @@ export default [
             })
         ],
         external: ['react', 'react-dom'] // Exclude React from the editor bundle
+    },
+    {
+        input: 'src/settings.js',
+        output: [{
+            file: 'dist/mediacontrols-settings.js',
+            format: 'iife',
+            name: 'MediaControlsSettingsr',
+        }],
+        plugins: [
+            resolve(),
+            commonjs(),
+            css({ output: 'mediacontrols-settings.css' }),
+        ],
+    },
+    {
+        input: 'src/preview.js',
+        output: [{
+            file: 'dist/mediacontrols-preview.js',
+            format: 'iife',
+            name: 'MediaControlsPreviewr',
+        }],
+        plugins: [
+            resolve(),
+            commonjs(),
+        ],
     },
     {
         input: 'src/index.js', // Frontend script entry point
@@ -41,7 +66,7 @@ export default [
                 presets: ['@babel/preset-env'],
                 exclude: 'node_modules/**'
             }),
-            css({ output: 'mediacontrols.css' }), // Correct path for CSS output
+            css({ output: 'mediacontrols.css' }),
         ]
     }
 ];

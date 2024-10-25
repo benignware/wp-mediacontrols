@@ -391,24 +391,80 @@
       _classPrivateFieldInitSpec(_this, _elementControlsObserver, null);
       _classPrivateFieldInitSpec(_this, _elementControlsObserverEnabled, true);
       _classPrivateFieldInitSpec(_this, _targetAttributeObserver, null);
-      _defineProperty(_this, "handleTargetAttributeChange", function () {
-        var targetElement = _classPrivateFieldGet2(_containerElement, _this);
-        if (_this.contains(targetElement)) {
-          return;
-        }
-        if (targetElement.hasAttribute('data-controls')) {
-          _this.controls = targetElement.hasAttribute('data-controls');
-        }
-        if (targetElement.hasAttribute('data-controlslist')) {
-          _this.controlslist = targetElement.getAttribute('data-controlslist');
-        }
-        var styleProps = ['--x-controls-bg', '--x-controls-color', '--x-controls-bg-opacity', '--x-controls-slide', '--x-controls-fade'];
-        styleProps.forEach(function (styleProp) {
-          var value = targetElement.style.getPropertyValue(styleProp);
-          if (value) {
-            _this.style.setProperty(styleProp, targetElement.style.getPropertyValue(styleProp));
+      _defineProperty(_this, "handleTargetAttributeMutation", function () {
+        var mutations = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+        _classPrivateFieldGet2(_containerElement, _this);
+
+        // if (this.contains(targetElement)) {
+        //   return;
+        // }
+        var _iterator = _createForOfIteratorHelper(mutations),
+          _step;
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var mutation = _step.value;
+            var attributeName = mutation.attributeName;
+            var newValue = mutation.target.getAttribute(attributeName);
+            if (!['data-controls', 'data-controlslist', 'style'].includes(attributeName)) {
+              continue;
+            }
+            var propName = attributeName.replace('data-', '');
+            if (newValue === null) {
+              _this.removeAttribute(propName);
+              continue;
+            }
+            if (['data-controls', 'data-controlslist'].includes(attributeName)) {
+              _this.setAttribute(propName, newValue);
+            }
+            if (attributeName === 'style') {
+              var _mutation$oldValue, _mutation$target$getA;
+              var oldStyle = ((_mutation$oldValue = mutation.oldValue) === null || _mutation$oldValue === void 0 ? void 0 : _mutation$oldValue.split(';').reduce(function (acc, style) {
+                var _style$split = style.split(':'),
+                  _style$split2 = _slicedToArray(_style$split, 2),
+                  key = _style$split2[0],
+                  value = _style$split2[1];
+                if (key && value !== undefined) {
+                  acc[key.trim()] = value.trim();
+                }
+                return acc;
+              }, {})) || {};
+
+              // Remove old styles
+              Object.entries(oldStyle).forEach(function (_ref) {
+                var _ref2 = _slicedToArray(_ref, 2),
+                  key = _ref2[0],
+                  value = _ref2[1];
+                if (key.startsWith('--x-')) {
+                  _this.style.removeProperty(key);
+                }
+              });
+              var newStyle = ((_mutation$target$getA = mutation.target.getAttribute('style')) === null || _mutation$target$getA === void 0 ? void 0 : _mutation$target$getA.split(';').reduce(function (acc, style) {
+                var _ref3 = (style === null || style === void 0 ? void 0 : style.split(':')) || [],
+                  _ref4 = _slicedToArray(_ref3, 2),
+                  key = _ref4[0],
+                  value = _ref4[1];
+                if (key && value !== undefined) {
+                  acc[key.trim()] = value.trim();
+                }
+                return acc;
+              }, {})) || {};
+
+              // Add new styles
+              Object.entries(newStyle).forEach(function (_ref5) {
+                var _ref6 = _slicedToArray(_ref5, 2),
+                  key = _ref6[0],
+                  value = _ref6[1];
+                if (key.startsWith('--x-')) {
+                  _this.style.setProperty(key, value);
+                }
+              });
+            }
           }
-        });
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
+        }
       });
       _this.handleResize = _this.handleResize.bind(_this);
       _this.handleSlotChange = _this.handleSlotChange.bind(_this);
@@ -433,7 +489,7 @@
       _this.handlePointerLeave = _this.handlePointerLeave.bind(_this);
       _this.handleControlsListChange = _this.handleControlsListChange.bind(_this);
       _this.handleElementControlsChanged = _this.handleElementControlsChanged.bind(_this);
-      _this.handleTargetAttributeChange = _this.handleTargetAttributeChange.bind(_this);
+      _this.handleTargetAttributeMutation = _this.handleTargetAttributeMutation.bind(_this);
       _this.handleElementControlsChanged = _this.handleElementControlsChanged.bind(_this);
       _this.update = _this.update.bind(_this);
       _this.attachShadow({
@@ -442,7 +498,7 @@
       _classPrivateFieldSet2(_internals, _this, _this.attachInternals());
       _classPrivateFieldSet2(_controlslist, _this, new MediaControlsList(_this.handleControlsListChange));
       _classPrivateFieldSet2(_elementControlsObserver, _this, new MutationObserver(_this.handleElementControlsChanged));
-      _classPrivateFieldSet2(_targetAttributeObserver, _this, new MutationObserver(_this.handleTargetAttributeChange));
+      _classPrivateFieldSet2(_targetAttributeObserver, _this, new MutationObserver(_this.handleTargetAttributeMutation));
       var html = "\n      <style>\n        :host {\n          --x-controls-padding-x: 14px;\n          --x-controls-padding-y: 12px;\n          --x-controls-gap: 10px;\n          display: block;\n          position: relative;\n          font-family: var(--x-font-family, sans-serif);\n          font-size: var(--x-font-size, 0.9rem);\n        }\n\n        :host(:state(--fullscreen)) {\n            width: 100vw !important;\n            height: 100vh !important;\n            position: fixed !important;\n            top: 0 !important;\n            left: 0 !important;\n            right: 0 !important;\n            bottom: 0 !important;\n        }\n\n        :host figure {\n          display: flex;\n        }\n\n        :host video::-webkit-media-controls-panel {\n            display: none !important;\n            opacity: 1 !important;\n        }\n\n        /*:host slot {\n          display: block;\n          overflow: hidden;\n          pointer-events: none;\n          outline: 2px solid red;\n        }*/\n\n        :host([for]) {\n          display: block;\n          overflow: visible;\n        }\n\n        :host::part(body) {\n          position: relative;\n          display: flex;\n        }\n\n        :host::part(controls-frame) {\n          position: absolute;\n          top: 0;\n          left: 0;\n          right: 0;\n          bottom: 0;\n          overflow: hidden;\n          pointer-events: none;\n          z-index: 1;\n        }\n\n        /* controls panel */\n        :host::part(controls-panel) {\n          pointer-events: auto;\n          position: absolute;\n          left: 0;\n          right: 0;\n          bottom: 0;\n          /*background: var(--x-controls-bg, color-mix(in srgb, black 45%, transparent));*/\n          background: rgba(from var(--x-controls-bg, black) r g b / var(--x-controls-bg-opacity, 0.55));\n          color: var(--x-controls-color, #fff);\n          transition-delay: 0s;\n          padding: var(--x-controls-padding-y, 0.5rem) var(--x-controls-padding-x, 0.5rem);\n          /*gap: var(--x-controls-gap, 0.5rem);*/\n        }\n\n        :host::part(controls-panel) {\n          transform: translateY(\n            calc(\n              100% * var(--x-controls-slide, 1) +\n              0% * (1 - var(--x-controls-slide, 1))\n            )\n          );\n          opacity: calc(\n            0 * var(--x-controls-fade, 1) +\n            1 * (1 - var(--x-controls-fade, 1))\n          );\n        }\n\n        :host::part(controls-panel-body) {\n          display: flex;\n          justify-content: start;\n          align-items: center;\n          margin-left: calc(var(--x-controls-gap, 0.5rem) / 2 * -1);\n          margin-right: calc(var(--x-controls-gap, 0.5rem) / 2 * -1);\n        }\n\n        :host::part(control) {\n          padding-left: calc(var(--x-controls-gap, 0.5rem) / 2);\n          padding-right: calc(var(--x-controls-gap, 0.5rem) / 2);\n          box-sizing: border-box;\n          /* min-height: 1rem; */\n        }\n\n        :host(:state(--nocontrols))::part(overlay-playbutton),\n        :host(:state(--nocontrols))::part(controls-panel) {\n          display: none;\n        }\n\n        :host(:state(--animated))::part(controls-panel) {\n          transition: transform 0.3s ease-in, opacity 0.3s ease-in;\n        }\n\n        :host(:state(--paused))::part(controls-panel) {\n        }\n\n        :host(:state(--fullscreen))::part(controls-panel) {\n        }\n\n        :host(:state(--controlsvisible))::part(controls-panel) {\n          transform: translateY(0);\n          transition-delay: 0.1s;\n          opacity: 1;\n        }\n\n        /* sliders */\n        :host::part(slider) {\n          -webkit-appearance: none;\n          appearance: none;\n          background: transparent;\n          cursor: pointer;\n          display: block;\n          /*width: max-content;\n          flex-grow: 1;\n          flex-shrink: 1; */\n          pointer-events: auto;\n          margin: 0;\n        }\n\n        :host::part(timeline) {\n          min-width: 65px;\n          flex-grow: 1;\n          flex-shrink: 1;\n        }\n\n        ".concat(['-webkit-slider-runnable-track', '-moz-range-track'].map(function (selector) {
         return "\n          *::".concat(selector, " {\n            width: 100%;\n            height: var(--x-slider-height, 0.5rem);\n            cursor: pointer;\n            box-shadow: var(--x-slider-shadow, inset 0 1px 2px color-mix(in srgb, black 5%, transparent));\n            background: var(--x-slider-bg, color-mix(in srgb, var(--x-controls-color, #fff) 50%, transparent));\n            border-radius: var(--x-slider-radius, 0.5rem);\n            border-width: var(--x-slider-border-width, 0);\n            border-style: var(--x-slider-border-style, solid);\n            border-color: var(--x-slider-border-color, #010101);\n            display: flex;\n          }\n          \n          input[type=range]:focus::").concat(selector, " {\n            /*background: initial;*/\n          }\n        ");
       }).join('\n'), "\n\n        ").concat(['-webkit-slider-thumb', '-moz-range-thumb'].map(function (selector) {
@@ -456,10 +512,10 @@
         'current-time': ['notime', 'nocurrenttime'],
         'duration': ['notime', 'noduration'],
         'timeline': ['notime', 'notimeline']
-      }).map(function (_ref) {
-        var _ref2 = _slicedToArray(_ref, 2),
-          part = _ref2[0],
-          triggers = _ref2[1];
+      }).map(function (_ref7) {
+        var _ref8 = _slicedToArray(_ref7, 2),
+          part = _ref8[0],
+          triggers = _ref8[1];
         return "\n            :host(:where(\n              ".concat(triggers.map(function (trigger) {
           return "\n                [controlslist=\"".concat(trigger, "\"],\n                [controlslist^=\"").concat(trigger, " \"],\n                [controlslist*=\" ").concat(trigger, " \"],\n                [controlslist$=\" ").concat(trigger, "\"]\n              ");
         }).join(',\n'), "\n            ))::part(").concat(part, ") {\n              /*outline: 2px solid blue;*/\n              display: none;\n              /*").concat(triggers.map(function (trigger) {
@@ -488,6 +544,7 @@
     return _createClass(MediaControls, [{
       key: "setTargetElement",
       value: function setTargetElement(targetElement) {
+        var _this2 = this;
         var containerElement = this.contains(targetElement) ? _classPrivateFieldGet2(_body, this) : targetElement;
         if (targetElement !== _classPrivateFieldGet2(_containerElement, this)) {
           if (_classPrivateFieldGet2(_containerElement, this)) {
@@ -501,12 +558,39 @@
             // Add event listeners
             _classPrivateFieldGet2(_containerElement, this).addEventListener('pointermove', this.handlePointerMove);
             _classPrivateFieldGet2(_containerElement, this).addEventListener('pointerleave', this.handlePointerLeave);
-            this.handleTargetAttributeChange();
 
-            // this.#targetAttributeObserver.observe(this.#containerElement, {
-            //   attributes: true,
-            //   attributeFilter: ['style', 'data-controlslist'],
-            // });
+            // Init with with target element attributes
+            if (_classPrivateFieldGet2(_containerElement, this).hasAttribute('data-controls')) {
+              this.controls = _classPrivateFieldGet2(_containerElement, this).hasAttribute('data-controls');
+            }
+            if (_classPrivateFieldGet2(_containerElement, this).hasAttribute('data-controlslist')) {
+              this.controlslist = _classPrivateFieldGet2(_containerElement, this).getAttribute('data-controlslist');
+            }
+            var style = _classPrivateFieldGet2(_containerElement, this).getAttribute('style');
+            if (style) {
+              var styles = style.split(';').reduce(function (acc, style) {
+                var _ref9 = (style === null || style === void 0 ? void 0 : style.split(':')) || [],
+                  _ref10 = _slicedToArray(_ref9, 2),
+                  key = _ref10[0],
+                  value = _ref10[1];
+                if (key && value !== undefined) {
+                  acc[key.trim()] = value.trim();
+                }
+                return acc;
+              }, {});
+              Object.entries(styles).forEach(function (_ref11) {
+                var _ref12 = _slicedToArray(_ref11, 2),
+                  key = _ref12[0],
+                  value = _ref12[1];
+                if (key.startsWith('--x-')) {
+                  _this2.style.setProperty(key, value);
+                }
+              });
+            }
+            _classPrivateFieldGet2(_targetAttributeObserver, this).observe(_classPrivateFieldGet2(_containerElement, this), {
+              attributes: true,
+              attributeFilter: ['style', 'data-controlslist', 'data-controls']
+            });
           }
           var mediaElement = null;
           if (targetElement) {
@@ -630,11 +714,11 @@
     }, {
       key: "handleElementClick",
       value: function handleElementClick(event) {
-        var _this2 = this;
+        var _this3 = this;
         clearTimeout(_classPrivateFieldGet2(_clickTimeout, this));
         if (event.detail === 1) {
           _classPrivateFieldSet2(_clickTimeout, this, setTimeout(function () {
-            _this2.handleElementSingleClick(event);
+            _this3.handleElementSingleClick(event);
           }, 200));
         }
       }
@@ -716,7 +800,7 @@
     }, {
       key: "handlePointerMove",
       value: function handlePointerMove(event) {
-        var _this3 = this;
+        var _this4 = this;
         if (_classPrivateFieldGet2(_autohideTimeout, this)) {
           clearTimeout(_classPrivateFieldGet2(_autohideTimeout, this));
         }
@@ -730,7 +814,7 @@
           return;
         }
         _classPrivateFieldSet2(_autohideTimeout, this, setTimeout(function () {
-          _classPrivateFieldGet2(_internals, _this3).states["delete"]('--controlsvisible');
+          _classPrivateFieldGet2(_internals, _this4).states["delete"]('--controlsvisible');
         }, MediaControls.CONTROLS_TIMEOUT));
       }
     }, {
@@ -793,7 +877,6 @@
         var hasVisibleControls = Array.from(controls).some(function (control) {
           return getComputedStyle(control).display !== 'none';
         });
-        console.log('handleControlsListChange', hasVisibleControls);
         if (!hasVisibleControls) {
           _classPrivateFieldGet2(_internals, this).states.add('--nocontrols');
         } else {
@@ -861,7 +944,7 @@
     }, {
       key: "hideControls",
       value: function hideControls() {
-        var _this4 = this;
+        var _this5 = this;
         var timeout = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : MediaControls.CONTROLS_TIMEOUT;
         if (_classPrivateFieldGet2(_autohideTimeout, this)) {
           clearTimeout(_classPrivateFieldGet2(_autohideTimeout, this));
@@ -871,8 +954,8 @@
           return;
         }
         _classPrivateFieldSet2(_autohideTimeout, this, setTimeout(function () {
-          if (!_classPrivateFieldGet2(_mediaElement, _this4).paused) {
-            _classPrivateFieldGet2(_internals, _this4).states["delete"]('--controlsvisible');
+          if (!_classPrivateFieldGet2(_mediaElement, _this5).paused) {
+            _classPrivateFieldGet2(_internals, _this5).states["delete"]('--controlsvisible');
           }
         }, timeout));
       }
@@ -891,7 +974,6 @@
         if (!_classPrivateFieldGet2(_containerElement, this)) {
           return;
         }
-        this.handleTargetAttributeChange();
         if (!_classPrivateFieldGet2(_mediaElement, this)) {
           return;
         }
@@ -982,19 +1064,17 @@
     }, {
       key: "controls",
       get: function get() {
-        console.log('GET CONTROLS: ', _classPrivateFieldGet2(_controls, this), _classPrivateFieldGet2(_hasElementControls, this));
         if (_classPrivateFieldGet2(_controls, this) === null) {
           return _classPrivateFieldGet2(_hasElementControls, this);
         }
         return !!_classPrivateFieldGet2(_controls, this);
       },
       set: function set(value) {
-        console.log('*** SET controls', value, _classPrivateFieldGet2(_controls, this));
         value = value === 'false' ? false : !!value;
+        console.log('*** SET CONTROLS: ', value, _classPrivateFieldGet2(_controls, this));
         if (value !== _classPrivateFieldGet2(_controls, this)) {
-          var attrValue = this.hasAttribute('controls') ? this.getAttribute('controls') : null;
-          if (attrValue === null || value !== attrValue) {
-            console.log('this.setAttribute("controls", value);', value);
+          var attrValue = this.hasAttribute('controls') ? true : false;
+          if (value !== attrValue) {
             if (value) {
               this.setAttribute('controls', '');
             } else {
@@ -1002,17 +1082,20 @@
             }
           }
           _classPrivateFieldSet2(_controls, this, value);
-          console.log('this.#mediaElement: ', _classPrivateFieldGet2(_mediaElement, this));
           if (_classPrivateFieldGet2(_mediaElement, this)) {
             _classPrivateFieldGet2(_mediaElement, this).controls = false;
           }
+          console.log('NEW controls: ', value, _classPrivateFieldGet2(_controls, this));
           this.update();
         }
       }
     }, {
       key: "attributeChangedCallback",
       value: function attributeChangedCallback(name, oldValue, newValue) {
-        if (oldValue === newValue) return;
+        if (oldValue === newValue) {
+          console.log('*** NO CHANGE');
+          return;
+        }
         if (name === 'controlslist') {
           this.controlslist.clear();
           this.controlslist.add(newValue);
@@ -1021,9 +1104,9 @@
         }
         if (Reflect.has(this, name)) {
           var isBool = typeof this[name] === 'boolean';
-          var value = isBool ? this.hasAttribute(name) : newValue;
-          if (value !== this[name]) {
-            this[name] = value;
+          newValue = isBool ? newValue === '' ? true : false : newValue;
+          if (newValue !== this[name]) {
+            this[name] = newValue;
           }
         }
       }

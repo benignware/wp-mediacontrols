@@ -1,9 +1,6 @@
 (function () {
   'use strict';
 
-  /**
-   * WordPress dependencies
-   */
   const {
     addFilter: addFilter$1
   } = wp.hooks;
@@ -20,7 +17,7 @@
     Button: Button$1,
     BaseControl,
     ToggleControl: ToggleControl$2,
-    SelectControl: SelectControl$2
+    SelectControl: SelectControl$1
   } = wp.components;
   const {
     createHigherOrderComponent: createHigherOrderComponent$1
@@ -153,7 +150,7 @@
       onChange: toggleFactory.playsInline,
       checked: !!playsInline,
       help: __$1('When enabled, videos will play directly within the webpage on mobile browsers, instead of opening in a fullscreen player.')
-    }), /*#__PURE__*/React.createElement(SelectControl$2, {
+    }), /*#__PURE__*/React.createElement(SelectControl$1, {
       label: __$1('Preload'),
       value: preload,
       onChange: onChangePreload,
@@ -250,21 +247,25 @@
     }, _extends.apply(null, arguments);
   }
 
+  const PLUGIN_SLUG = 'mediacontrols';
+  const COMPONENT_CLASS = 'is-mediacontrols';
+  const UPDATE_MESSAGE_TYPE = 'updateMediacontrols';
+  const SETTINGS_ATTRIBUTE = 'mediacontrols';
+  const SETTINGS_LABEL = 'Media Controls';
+  const SUPPORTED_BLOCKS = ['core/video', 'core/cover'];
+
   const {
-    RangeControl: RangeControl$1,
-    SelectControl: SelectControl$1,
+    RangeControl,
+    SelectControl,
     ToggleControl: ToggleControl$1,
-    ColorPalette,
     ColorPicker,
     Dropdown,
     ColorIndicator,
     Popover,
     Button,
     __experimentalHStack: HStack,
-    Flex,
     FlexItem
   } = wp.components;
-  wp.blockEditor;
   wp.i18n;
   const {
     withState
@@ -296,21 +297,8 @@
       // Update the previous blocks state to the current state
       setPrevBlocks(blocks);
     }, [blocks, prevBlocks, onBlockRemove]);
-    return null; // No UI, purely an event listener
+    return null;
   };
-
-  // const {
-  //   RangeControl,
-  //   SelectControl,
-  //   ToggleControl,
-  //   ColorPalette,
-  //   Dropdown,
-  //   Popover,
-  //   Button,
-  // } = wp.components;
-  // const { withState } = wp.compose;
-  // const { __ } = wp.i18n;
-
   const renderControl = ({
     type,
     label,
@@ -318,7 +306,6 @@
     onChange,
     ...props
   }) => {
-    // console.log('renderControl', type, label, value, onChange, props);
     switch (type) {
       case 'boolean':
         return /*#__PURE__*/React.createElement(ToggleControl$1, _extends({
@@ -327,13 +314,13 @@
           onChange: onChange
         }, props));
       case 'number':
-        return /*#__PURE__*/React.createElement(RangeControl$1, _extends({
+        return /*#__PURE__*/React.createElement(RangeControl, _extends({
           label: label,
           value: value,
           onChange: onChange
         }, props));
       case 'select':
-        return /*#__PURE__*/React.createElement(SelectControl$1, _extends({
+        return /*#__PURE__*/React.createElement(SelectControl, _extends({
           label: label,
           value: value,
           options: props.options,
@@ -406,6 +393,71 @@
     }));
   });
 
+  // Used to get related elements
+  // const getInputType = (el) => {
+  //   const relatedElements = getRelatedElements(el);
+
+  //   for (const relEl of relatedElements) {
+  //       const type = relEl.dataset.type
+  //           || {
+  //               checkbox: 'boolean',
+  //               radio: 'boolean', // TODO: radio may be select, need to check
+  //               select: 'select',
+  //               text: 'text',
+  //           }[relEl.type]
+
+  //       if (type) {
+  //           return type;
+  //       }
+  //   }
+
+  //   return 'string';
+  // }
+
+  // Helper function to build the controlslist attribute value
+  const buildControlsList = (attributes, keys = ['fullscreenButton', 'overlayPlayButton', 'playButton', 'muteButton', 'timeline', 'volumeSlider', 'duration', 'currentTime']) => {
+    const controlsList = [];
+    keys.forEach(key => {
+      // Convert key to camelCase with 'show' prefix
+      const prop = `show${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+
+      // If the attribute is falsy, add the corresponding 'no' prefixed control name
+      if (attributes[prop] !== undefined && !attributes[prop]) {
+        controlsList.push(`no${key.toLowerCase()}`);
+      }
+    });
+    return controlsList.join(' ');
+  };
+  const getWrapperProps = props => {
+    const {
+      attributes: {
+        [SETTINGS_ATTRIBUTE]: settings,
+        controls
+      }
+    } = props;
+    const styles = {
+      '--x-controls-bg': settings.backgroundColor || '',
+      '--x-controls-bg-opacity': settings.backgroundOpacity ? settings.backgroundOpacity / 100 : '',
+      '--x-controls-color': settings.textColor || '',
+      '--x-controls-slide': settings.panelAnimation ? settings.panelAnimation === 'slide' ? '1' : '0' : '',
+      '--x-controls-fade': settings.panelAnimation ? settings.panelAnimation === 'fade' ? '1' : '0' : ''
+    };
+    const style = Object.entries(styles).reduce((acc, [key, value]) => {
+      acc[key] = value;
+      return acc;
+    }, {});
+    const result = {
+      className: COMPONENT_CLASS
+    };
+    result['data-controls'] = controls !== undefined && controls ? '' : undefined;
+    const controlslist = buildControlsList(settings);
+    result['data-controlslist'] = controlslist || undefined;
+    if (Object.keys(style).length) {
+      result.style = style;
+    }
+    return result;
+  };
+
   const {
     __
   } = wp.i18n;
@@ -413,11 +465,8 @@
     Fragment
   } = wp.element;
   const {
-    RangeControl,
-    SelectControl,
     ToggleControl,
     PanelBody,
-    BlockControls,
     __experimentalToolsPanel: ToolsPanel,
     __experimentalToolsPanelItem: ToolsPanelItem
   } = wp.components;
@@ -430,75 +479,31 @@
   const {
     addFilter
   } = wp.hooks;
-  const pluginSlug = 'mediacontrols';
-  const supportedBlocks = ['core/video', 'core/cover'];
-  const settingsAttribute = `${pluginSlug}`;
-  const componentClass = `is-${pluginSlug}`;
-  const updateMessageType = 'updateMediacontrols';
   const {
     settings: globalSettings = {},
-    data: settingsData
-  } = window[`${pluginSlug}Settings`] || {};
+    schema: settingsData
+  } = window[`${PLUGIN_SLUG}Settings`] || {};
   const settingsSections = Object.keys(settingsData).reduce((acc, key) => {
     const item = settingsData[key];
     const section = item.section || 'general';
     (acc[section] = acc[section] || {})[key] = item; // Initialize section and assign item
     return acc;
   }, {});
-
-  // Helper function to build the controlslist attribute value
-  const buildControlsList = (attributes, keys = ['fullscreenButton', 'overlayPlayButton', 'playButton', 'muteButton', 'timeline', 'volumeSlider', 'duration', 'currentTime']) => {
-    const controlsList = [];
-    keys.forEach(key => {
-      // Convert key to camelCase with 'show' prefix
-      const prop = `show${key.charAt(0).toUpperCase()}${key.slice(1)}`;
-
-      // If the attribute is falsy, add the corresponding 'no' prefixed control name
-      if (!attributes[prop]) {
-        controlsList.push(`no${key.toLowerCase()}`);
-      }
-    });
-    return controlsList.join(' ');
-  };
-  const getWrapperProps = props => {
-    const {
-      attributes: {
-        [settingsAttribute]: settings,
-        controls
-      }
-    } = props;
-    const styles = {
-      '--x-controls-bg': settings.backgroundColor,
-      '--x-controls-bg-opacity': settings.backgroundOpacity / 100,
-      '--x-controls-color': settings.textColor,
-      '--x-controls-slide': settings.panelAnimation === 'slide' ? '1' : '0',
-      '--x-controls-fade': settings.panelAnimation === 'fade' ? '1' : '0'
-    };
-    return {
-      className: componentClass,
-      'data-controls': typeof controls !== 'undefined' ? !!controls : undefined,
-      'data-controlslist': buildControlsList(settings),
-      style: Object.entries(styles).reduce((acc, [key, value]) => {
-        acc[key] = value;
-        return acc;
-      }, {})
-    };
-  };
   const dispatchUpdateMessage = (enabled, filter) => {
     const iframeWindow = document.querySelector('[name="editor-canvas"]').contentWindow;
     if (iframeWindow) {
       iframeWindow.postMessage({
-        type: updateMessageType
+        type: UPDATE_MESSAGE_TYPE
       }, '*');
     }
   };
 
   // Add custom attributes
   const addSettingsAttribute = (settings, name) => {
-    if (supportedBlocks.includes(name)) {
+    if (SUPPORTED_BLOCKS.includes(name)) {
       settings.attributes = {
         ...settings.attributes,
-        [settingsAttribute]: {
+        [SETTINGS_ATTRIBUTE]: {
           type: 'object',
           default: {}
         }
@@ -508,7 +513,7 @@
   };
 
   // Add filter to include the custom attributes
-  wp.hooks.addFilter('blocks.registerBlockType', `${pluginSlug}/settings`, addSettingsAttribute);
+  wp.hooks.addFilter('blocks.registerBlockType', `${PLUGIN_SLUG}/settings`, addSettingsAttribute);
 
   // Extend BlockEdit to add custom controls to the sidebar
   const addSettingsControls = createHigherOrderComponent(BlockEdit => {
@@ -518,7 +523,7 @@
         setAttributes,
         name: blockName
       } = props;
-      const isSupportedBlock = supportedBlocks.includes(blockName);
+      const isSupportedBlock = SUPPORTED_BLOCKS.includes(blockName);
 
       // Handle cover block with video background
       const isVideo = blockName === 'core/cover' ? attributes.backgroundType === 'video' : isSupportedBlock;
@@ -533,17 +538,17 @@
           const {
             [key]: _,
             ...newSettings
-          } = attributes[settingsAttribute];
+          } = attributes[SETTINGS_ATTRIBUTE];
           setAttributes({
             ...attributes,
-            [settingsAttribute]: newSettings
+            [SETTINGS_ATTRIBUTE]: newSettings
           });
           dispatchUpdateMessage();
         } else {
           setAttributes({
             ...attributes,
-            [settingsAttribute]: {
-              ...attributes[settingsAttribute],
+            [SETTINGS_ATTRIBUTE]: {
+              ...attributes[SETTINGS_ATTRIBUTE],
               [key]: value
             }
           });
@@ -563,21 +568,22 @@
           return acc;
         }, {});
         setAttributes({
-          [settingsAttribute]: newSettings
+          [SETTINGS_ATTRIBUTE]: newSettings
         });
         dispatchUpdateMessage();
       };
       const settings = {
         ...globalSettings,
-        ...attributes[settingsAttribute]
+        ...attributes[SETTINGS_ATTRIBUTE]
       };
+      const enabledLabel = settings.enabled ? __('Enabled') : __('Disabled');
       return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(BlockEdit, props), /*#__PURE__*/React.createElement(BlockRemovalListener, {
         onBlockRemove: handleBlockRemove
       }), /*#__PURE__*/React.createElement(InspectorControls, null, /*#__PURE__*/React.createElement(PanelBody, {
-        title: __('Media Controls', 'mediacontrols'),
+        title: SETTINGS_LABEL,
         initialOpen: true
       }, /*#__PURE__*/React.createElement(ToggleControl, {
-        label: __('Enable MediaControls', 'mediacontrols'),
+        label: enabledLabel,
         checked: settings.enabled,
         onChange: value => updateSetting('enabled', value)
       }), settings.enabled && /*#__PURE__*/React.createElement(Fragment, null, Object.entries(controls).map(([key, {
@@ -591,15 +597,13 @@
         }
       }, renderControl({
         type,
-        // Control type to render
         label,
-        // Label for the control
         checked: settings[key],
         onChange: value => updateSetting(key, value)
       })))))), settings.enabled && /*#__PURE__*/React.createElement(InspectorControls, {
         group: "styles"
       }, /*#__PURE__*/React.createElement(ToolsPanel, {
-        label: __('Media Controls'),
+        label: __(SETTINGS_LABEL),
         resetAll: resetAllStyles
       }, Object.entries(styles).map(([key, {
         name,
@@ -611,7 +615,7 @@
         options = []
       }]) => /*#__PURE__*/React.createElement(ToolsPanelItem, {
         key: name,
-        hasValue: () => attributes[settingsAttribute][key] !== undefined,
+        hasValue: () => attributes[SETTINGS_ATTRIBUTE][key] !== undefined,
         label: label,
         onDeselect: () => updateSetting(key, null) // Clear value when deselected
         ,
@@ -628,31 +632,32 @@
       }))))));
     };
   }, 'withMediaControlsInspector');
-  wp.hooks.addFilter('editor.BlockEdit', `${pluginSlug}mediacontrols/controls`, addSettingsControls);
+  wp.hooks.addFilter('editor.BlockEdit', `${PLUGIN_SLUG}mediacontrols/controls`, addSettingsControls);
   const withSettingsStyle = createHigherOrderComponent(BlockListBlock => {
     return props => {
-      if (!supportedBlocks.includes(props.name)) {
+      if (!SUPPORTED_BLOCKS.includes(props.name)) {
         return /*#__PURE__*/React.createElement(BlockListBlock, props);
       }
       const {
         attributes: {
-          [settingsAttribute]: blockSettings,
+          [SETTINGS_ATTRIBUTE]: blockSettings,
           controls = false
         }
       } = props;
       const settings = {
-        ...globalSettings,
+        // ...globalSettings,
         ...blockSettings
       };
-      console.log('add settings style', props.name, settings.enabled, controls);
-      if (controls && settings.enabled) {
+      const wrapperProps = getWrapperProps(props);
+      console.log('wrapper props', wrapperProps);
+      if (settings.enabled) {
         return /*#__PURE__*/React.createElement(BlockListBlock, _extends({}, props, {
-          wrapperProps: getWrapperProps(props)
+          wrapperProps: wrapperProps
         }));
       }
       return /*#__PURE__*/React.createElement(BlockListBlock, props);
     };
   }, 'withMediaControlsSettingsStyle');
-  addFilter('editor.BlockListBlock', `${pluginSlug}/settings-style`, withSettingsStyle);
+  addFilter('editor.BlockListBlock', `${PLUGIN_SLUG}/settings-style`, withSettingsStyle);
 
 })();

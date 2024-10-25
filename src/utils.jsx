@@ -2,20 +2,23 @@ const {
   RangeControl,
   SelectControl,
   ToggleControl,
-  ColorPalette,
   ColorPicker,
   Dropdown,
   ColorIndicator,
   Popover,
   Button,
   __experimentalHStack: HStack,
-
-  Flex,
   FlexItem
 } = wp.components;
-const { ColorPaletteControl } = wp.blockEditor;
 const { __ } = wp.i18n;
 const { withState } = wp.compose;
+
+export const getSettingsSections = schema => Object.keys(schema).reduce((acc, key) => {
+  const item = schema[key];
+  const section = item.section || 'general';
+  (acc[section] = acc[section] || {})[key] = item; // Initialize section and assign item
+  return acc;
+}, {});
 
 export const BlockRemovalListener = ({ onBlockRemove }) => {
   const { select } = wp.data;
@@ -41,24 +44,11 @@ export const BlockRemovalListener = ({ onBlockRemove }) => {
     setPrevBlocks(blocks);
   }, [blocks, prevBlocks, onBlockRemove]);
 
-  return null; // No UI, purely an event listener
+  return null;
 };
 
 
-// const {
-//   RangeControl,
-//   SelectControl,
-//   ToggleControl,
-//   ColorPalette,
-//   Dropdown,
-//   Popover,
-//   Button,
-// } = wp.components;
-// const { withState } = wp.compose;
-// const { __ } = wp.i18n;
-
 export const renderControl = ({ type, label, value, onChange, ...props }) => {
-  // console.log('renderControl', type, label, value, onChange, props);
   switch (type) {
     case 'boolean':
       return (
@@ -151,3 +141,26 @@ const ColorPickerControl = withState({ isOpen: false })(
     );
   }
 );
+
+
+
+// Used to get related elements
+// const getInputType = (el) => {
+//   const relatedElements = getRelatedElements(el);
+
+//   for (const relEl of relatedElements) {
+//       const type = relEl.dataset.type
+//           || {
+//               checkbox: 'boolean',
+//               radio: 'boolean', // TODO: radio may be select, need to check
+//               select: 'select',
+//               text: 'text',
+//           }[relEl.type]
+
+//       if (type) {
+//           return type;
+//       }
+//   }
+
+//   return 'string';
+// }

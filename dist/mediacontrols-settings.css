@@ -43,7 +43,7 @@
   transform: translateX(20px); /* Move the slider */
 }
 
-.mc-settings-preview {
+#mediacontrols-preview {
   display: flex;
   align-items: center;
   margin-bottom: 10px;

@@ -16,7 +16,6 @@ x-mediacontrols figure {
   pointer-events: none;
 }
 
-
 .wp-block-cover x-mediacontrols::part(body) {
   position: absolute;
   display: flex;
@@ -25,8 +24,6 @@ x-mediacontrols figure {
   left: 0;
   right: 0;
 }
-
-
 
 .wp-block-cover .wp-block-cover__background,
 .wp-block-cover .wp-block-cover__gradient-background,

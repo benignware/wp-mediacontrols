@@ -77,7 +77,7 @@ export default class MediaControls extends HTMLElement {
     this.handleControlsListChange = this.handleControlsListChange.bind(this);
     this.handleElementControlsChanged = this.handleElementControlsChanged.bind(this);
 
-    this.handleTargetAttributeChange = this.handleTargetAttributeChange.bind(this);
+    this.handleTargetAttributeMutation = this.handleTargetAttributeMutation.bind(this);
     this.handleElementControlsChanged = this.handleElementControlsChanged.bind(this);
 
     this.update = this.update.bind(this);
@@ -88,7 +88,7 @@ export default class MediaControls extends HTMLElement {
     this.#controlslist = new MediaControlsList(this.handleControlsListChange);
 
     this.#elementControlsObserver = new MutationObserver(this.handleElementControlsChanged);
-    this.#targetAttributeObserver = new MutationObserver(this.handleTargetAttributeChange);
+    this.#targetAttributeObserver = new MutationObserver(this.handleTargetAttributeMutation);
 
     const html = `
       <style>
@@ -695,13 +695,38 @@ export default class MediaControls extends HTMLElement {
         // Add event listeners
         this.#containerElement.addEventListener('pointermove', this.handlePointerMove);
         this.#containerElement.addEventListener('pointerleave', this.handlePointerLeave);
+        
+        // Init with with target element attributes
+        if (this.#containerElement.hasAttribute('data-controls')) {
+          this.controls = this.#containerElement.hasAttribute('data-controls');
+        }
 
-        this.handleTargetAttributeChange();
+        if (this.#containerElement.hasAttribute('data-controlslist')) {
+          this.controlslist = this.#containerElement.getAttribute('data-controlslist');
+        }
+        
+        const style = this.#containerElement.getAttribute('style');
 
-        // this.#targetAttributeObserver.observe(this.#containerElement, {
-        //   attributes: true,
-        //   attributeFilter: ['style', 'data-controlslist'],
-        // });
+        if (style) {
+          const styles = style.split(';').reduce((acc, style) => {
+            const [key, value] = style?.split(':') || [];
+            if (key && value !== undefined) {
+              acc[key.trim()] = value.trim();
+            }
+            return acc;
+          }, {});
+
+          Object.entries(styles).forEach(([key, value]) => {
+            if (key.startsWith('--x-')) {
+              this.style.setProperty(key, value);
+            }
+          });
+        }
+
+        this.#targetAttributeObserver.observe(this.#containerElement, {
+          attributes: true,
+          attributeFilter: ['style', 'data-controlslist', 'data-controls'],
+        });
       }
       
       let mediaElement = null;
@@ -720,30 +745,68 @@ export default class MediaControls extends HTMLElement {
     return this.#containerElement;
   }
   
-  handleTargetAttributeChange = () => {
+  handleTargetAttributeMutation = (mutations = []) => {
     const targetElement = this.#containerElement;
     
-    if (this.contains(targetElement)) {
-      return;
-    }
+    // if (this.contains(targetElement)) {
+    //   return;
+    // }
 
-    if (targetElement.hasAttribute('data-controls')) {
-      this.controls = targetElement.hasAttribute('data-controls');
-    }
+    for (const mutation of mutations) {
+      const attributeName = mutation.attributeName;
+      const newValue = mutation.target.getAttribute(attributeName);
 
-    if (targetElement.hasAttribute('data-controlslist')) {
-      this.controlslist = targetElement.getAttribute('data-controlslist');
-    }
-
-    const styleProps = ['--x-controls-bg', '--x-controls-color', '--x-controls-bg-opacity', '--x-controls-slide', '--x-controls-fade'];
-
-    styleProps.forEach((styleProp) => {
-      const value = targetElement.style.getPropertyValue(styleProp);
-
-      if (value) {
-        this.style.setProperty(styleProp, targetElement.style.getPropertyValue(styleProp));
+      if (!['data-controls', 'data-controlslist', 'style'].includes(attributeName)) {
+        continue;
       }
-    });
+
+      const propName = attributeName.replace('data-', '');
+
+      if (newValue === null) {
+        this.removeAttribute(propName);
+        continue;
+      }
+
+      if (['data-controls', 'data-controlslist'].includes(attributeName)) {
+        this.setAttribute(propName, newValue);
+      }
+
+      if (attributeName === 'style') {
+        const oldStyle = mutation.oldValue?.split(';').reduce((acc, style) => {
+          const [key, value] = style.split(':');
+
+          if (key && value !== undefined) {
+            acc[key.trim()] = value.trim();
+          }
+
+          return acc;
+        }, {}) || {};
+
+        // Remove old styles
+        Object.entries(oldStyle).forEach(([key, value]) => {
+          if (key.startsWith('--x-')) {
+            this.style.removeProperty(key);
+          }
+        });
+
+        const newStyle = mutation.target.getAttribute('style')?.split(';').reduce((acc, style) => {
+          const [key, value] = style?.split(':') || [];
+
+          if (key && value !== undefined) {
+            acc[key.trim()] = value.trim();
+          }
+
+          return acc;
+        }, {}) || {};
+
+        // Add new styles
+        Object.entries(newStyle).forEach(([key, value]) => {
+          if (key.startsWith('--x-')) {
+            this.style.setProperty(key, value);
+          }
+        });
+      }
+    }
   }
 
   set mediaElement(value) {
@@ -1038,8 +1101,6 @@ export default class MediaControls extends HTMLElement {
     const controls = this.shadowRoot.querySelectorAll('[part="controls-panel"] *[part]');
     const hasVisibleControls = Array.from(controls).some(control => getComputedStyle(control).display !== 'none');
 
-    console.log('handleControlsListChange', hasVisibleControls);
-
     if (!hasVisibleControls) {
       this.#internals.states.add('--nocontrols');
     } else {
@@ -1141,8 +1202,6 @@ export default class MediaControls extends HTMLElement {
     if (!this.#containerElement) {
       return;
     }
-
-    this.handleTargetAttributeChange();
 
     if (!this.#mediaElement) {
       return;
@@ -1247,14 +1306,14 @@ export default class MediaControls extends HTMLElement {
   }
 
   set controls(value) {
-    console.log('*** SET controls', value, this.#controls);
     value = value === 'false' ? false : !!value;
 
-    if (value !== this.#controls) {
-      const attrValue = this.hasAttribute('controls') ? this.getAttribute('controls') : null;
+    console.log('*** SET CONTROLS: ', value, this.#controls);
 
-      if (attrValue === null || value !== attrValue) {
-        console.log('this.setAttribute("controls", value);', value);
+    if (value !== this.#controls) {
+      const attrValue = this.hasAttribute('controls') ? true : false;
+
+      if (value !== attrValue) {
         if (value) {
           this.setAttribute('controls', '');
         } else {
@@ -1264,18 +1323,17 @@ export default class MediaControls extends HTMLElement {
 
       this.#controls = value;
 
-      console.log('this.#mediaElement: ', this.#mediaElement);
-
       if (this.#mediaElement) {
         this.#mediaElement.controls = false;
       }
+
+      console.log('NEW controls: ', value, this.#controls);
 
       this.update();
     }
   }
 
   get controls() {
-    console.log('GET CONTROLS: ', this.#controls, this.#hasElementControls);
     if (this.#controls === null) {
       return this.#hasElementControls;
     }
@@ -1288,7 +1346,10 @@ export default class MediaControls extends HTMLElement {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue === newValue) return;
+    if (oldValue === newValue) {
+      console.log('*** NO CHANGE');
+      return;
+    }
 
     if (name === 'controlslist') {
       this.controlslist.clear();
@@ -1301,10 +1362,10 @@ export default class MediaControls extends HTMLElement {
 
     if (Reflect.has(this, name)) {
       const isBool = typeof (this[name]) === 'boolean';
-      const value = isBool ? this.hasAttribute(name) : newValue;
+      newValue = isBool ? newValue === '' ? true : false : newValue;
 
-      if (value !== this[name]) {
-        this[name] = value;
+      if (newValue !== this[name]) {
+        this[name] = newValue;
       }
     }
   }
