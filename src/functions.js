@@ -1,7 +1,21 @@
-import {
-  SETTINGS_ATTRIBUTE,
-  COMPONENT_CLASS,
-} from './constants';
+import { PLUGIN_SETTINGS_ID } from './constants';
+import { getPluginSettings, removeStyleProps } from './utils.js';
+
+const { componentClass, settingsAttribute } = getPluginSettings(PLUGIN_SETTINGS_ID);
+
+export const isSupportedBlock = (block) => {
+  const { name, attributes = null } = block;
+  
+  if (['core/video', 'core/cover'].includes(name)) {
+    if (attributes && name === 'core/cover') {
+      return attributes.backgroundType === 'video';
+    }
+
+    return true;
+  }
+
+  return false;
+};
 
 // Helper function to build the controlslist attribute value
 export const buildControlsList = (attributes, keys = [
@@ -29,8 +43,9 @@ export const buildControlsList = (attributes, keys = [
   return controlsList.join(' ');
 };
 
-export const getWrapperProps = (props) => {
-  const { attributes: { [SETTINGS_ATTRIBUTE]: settings, controls } } = props;
+export const getWrapperProps = (props, globalSettings = {}) => {
+  const { attributes: { [settingsAttribute]: settings, controls } } = props;
+  const mergedSettings = { ...globalSettings, ...settings };
   
   const styles = {
     '--x-controls-bg': settings.backgroundColor || '',
@@ -46,12 +61,12 @@ export const getWrapperProps = (props) => {
   }, {})
 
   const result = {
-    className: COMPONENT_CLASS,
+    className: mergedSettings.enabled ? componentClass : '',
   };
 
   result['data-controls'] = controls !== undefined && controls ? '' : undefined;
 
-  const controlslist = buildControlsList(settings);
+  const controlslist = buildControlsList(mergedSettings);
 
   result['data-controlslist'] = controlslist || undefined;
 

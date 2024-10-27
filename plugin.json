@@ -1,0 +1,102 @@
+{
+  "settings": {
+    "enabled": {
+      "label": "Enabled",
+      "description": "Enable or disable the media controls for all videos on the site.",
+      "type": "boolean",
+      "icon": "power",
+      "default": true,
+      "section": "general"
+    },
+    "showPlayButton": {
+      "label": "Play Button",
+      "type": "boolean",
+      "icon": "play",
+      "default": true,
+      "section": "controls"
+    },
+    "showTimeline": {
+      "label": "Timeline",
+      "type": "boolean",
+      "icon": "timeline",
+      "default": true,
+      "section": "controls"
+    },
+    "showCurrentTime": {
+      "label": "Current Time",
+      "type": "boolean",
+      "icon": "time",
+      "default": true,
+      "section": "controls"
+    },
+    "showDuration": {
+      "label": "Duration",
+      "type": "boolean",
+      "icon": "time",
+      "default": true,
+      "section": "controls"
+    },
+    "showMuteButton": {
+      "label": "Mute Button",
+      "type": "boolean",
+      "icon": "speaker",
+      "default": true,
+      "section": "controls"
+    },
+    "showVolumeSlider": {
+      "label": "Volume Slider",
+      "type": "boolean",
+      "icon": "volume",
+      "default": true,
+      "section": "controls"
+    },
+    "showFullscreenButton": {
+      "label": "Fullscreen Button",
+      "type": "boolean",
+      "icon": "fullscreen",
+      "default": true,
+      "section": "controls"
+    },
+    "backgroundColor": {
+      "label": "Background Color",
+      "type": "color",
+      "default": "#343434",
+      "section": "style"
+    },
+    "backgroundOpacity": {
+      "label": "Background Opacity",
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "unit": "%",
+      "default": 55,
+      "section": "style"
+    },
+    "textColor": {
+      "label": "Text Color",
+      "type": "color",
+      "default": "#FFFFFF",
+      "section": "style"
+    },
+    "panelAnimation": {
+      "label": "Panel Animation",
+      "type": "select",
+      "options": [
+        {
+          "label": "Slide",
+          "value": "slide"
+        },
+        {
+          "label": "Fade",
+          "value": "fade"
+        },
+        {
+          "label": "None",
+          "value": "none"
+        }
+      ],
+      "default": "slide",
+      "section": "style"
+    }
+  }
+}

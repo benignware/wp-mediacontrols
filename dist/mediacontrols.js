@@ -1071,7 +1071,6 @@
       },
       set: function set(value) {
         value = value === 'false' ? false : !!value;
-        console.log('*** SET CONTROLS: ', value, _classPrivateFieldGet2(_controls, this));
         if (value !== _classPrivateFieldGet2(_controls, this)) {
           var attrValue = this.hasAttribute('controls') ? true : false;
           if (value !== attrValue) {
@@ -1085,7 +1084,6 @@
           if (_classPrivateFieldGet2(_mediaElement, this)) {
             _classPrivateFieldGet2(_mediaElement, this).controls = false;
           }
-          console.log('NEW controls: ', value, _classPrivateFieldGet2(_controls, this));
           this.update();
         }
       }
@@ -1093,7 +1091,6 @@
       key: "attributeChangedCallback",
       value: function attributeChangedCallback(name, oldValue, newValue) {
         if (oldValue === newValue) {
-          console.log('*** NO CHANGE');
           return;
         }
         if (name === 'controlslist') {

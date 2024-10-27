@@ -13,13 +13,6 @@ const {
 const { __ } = wp.i18n;
 const { withState } = wp.compose;
 
-export const getSettingsSections = schema => Object.keys(schema).reduce((acc, key) => {
-  const item = schema[key];
-  const section = item.section || 'general';
-  (acc[section] = acc[section] || {})[key] = item; // Initialize section and assign item
-  return acc;
-}, {});
-
 export const BlockRemovalListener = ({ onBlockRemove }) => {
   const { select } = wp.data;
   const { useEffect, useState } = wp.element;

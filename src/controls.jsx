@@ -1,12 +1,8 @@
-import {
-  PLUGIN_SLUG,
-  SUPPORTED_BLOCKS,
-  SETTINGS_ATTRIBUTE,
-  SETTINGS_LABEL,
-  UPDATE_MESSAGE_TYPE
-} from "./constants";
+import { pascalCase } from 'change-case';
+import { PLUGIN_SETTINGS_ID } from './constants';
+import { getPluginSettings, removeStyleProps } from "./utils.js";
 import { BlockRemovalListener, renderControl } from "./utils.jsx";
-import { getWrapperProps } from "./functions";
+import { isSupportedBlock, getWrapperProps } from "./functions";
 
 const { __ } = wp.i18n;
 const { Fragment } = wp.element;
@@ -20,28 +16,28 @@ const { InspectorControls } = wp.blockEditor;
 const { createHigherOrderComponent } = wp.compose;
 const { addFilter } = wp.hooks;
 
-const { settings: globalSettings = {}, schema: settingsData } = window[`${PLUGIN_SLUG}Settings`] || {};
+const {
+  pluginName,
+  pluginSlug,
+  settingsAttribute,
+  settingsSections = {},
+  updateMessageType,
+  globalSettings,
+} = getPluginSettings(PLUGIN_SETTINGS_ID);
 
-const settingsSections = Object.keys(settingsData).reduce((acc, key) => {
-  const item = settingsData[key];
-  const section = item.section || 'general';
-  (acc[section] = acc[section] || {})[key] = item; // Initialize section and assign item
-  return acc;
-}, {});
-
-const dispatchUpdateMessage = (enabled, filter) => {
+const dispatchUpdateMessage = () => {
   const iframeWindow = document.querySelector('[name="editor-canvas"]').contentWindow;
   if (iframeWindow) {
-      iframeWindow.postMessage({ type: UPDATE_MESSAGE_TYPE }, '*');
+      iframeWindow.postMessage({ type: updateMessageType }, '*');
   }
 };
 
 // Add custom attributes
 const addSettingsAttribute = (settings, name) => {
-  if (SUPPORTED_BLOCKS.includes(name)) {
+  if (isSupportedBlock({ name })) {
     settings.attributes = {
       ...settings.attributes,
-      [SETTINGS_ATTRIBUTE]: { type: 'object', default: {} },
+      [settingsAttribute]: { type: 'object', default: {} },
     };
   }
 
@@ -51,7 +47,7 @@ const addSettingsAttribute = (settings, name) => {
 // Add filter to include the custom attributes
 wp.hooks.addFilter(
   'blocks.registerBlockType',
-  `${PLUGIN_SLUG}/settings`,
+  `${pluginSlug}/settings`,
   addSettingsAttribute
 );
 
@@ -60,30 +56,25 @@ const addSettingsControls = createHigherOrderComponent((BlockEdit) => {
   return (props) => {
     const { attributes, setAttributes, name: blockName } = props;
 
-    const isSupportedBlock = SUPPORTED_BLOCKS.includes(blockName);
-
-    // Handle cover block with video background
-    const isVideo = blockName === 'core/cover' ? attributes.backgroundType === 'video' : isSupportedBlock;
-
-    if (!isVideo) {
+    if (!isSupportedBlock(props)) {
       return <BlockEdit {...props} />;
     }
 
-    const handleBlockRemove = (removedBlock) => {
+    const handleBlockRemove = () => {
       dispatchUpdateMessage();
     };
 
     const updateSetting = (key, value) => {
       if (value === null) {
-          const { [key]: _, ...newSettings } = attributes[SETTINGS_ATTRIBUTE];
+          const { [key]: _, ...newSettings } = attributes[settingsAttribute];
 
-          setAttributes({ ...attributes, [SETTINGS_ATTRIBUTE]: newSettings });
+          setAttributes({ ...attributes, [settingsAttribute]: newSettings });
           dispatchUpdateMessage();
       } else {
           setAttributes({
             ...attributes,
-            [SETTINGS_ATTRIBUTE]: {
-              ...attributes[SETTINGS_ATTRIBUTE],
+            [settingsAttribute]: {
+              ...attributes[settingsAttribute],
               [key]: value
             }
           });
@@ -104,7 +95,7 @@ const addSettingsControls = createHigherOrderComponent((BlockEdit) => {
       }, {});
   
       setAttributes({
-          [SETTINGS_ATTRIBUTE]: newSettings,
+          [settingsAttribute]: newSettings,
       });
   
       dispatchUpdateMessage();
@@ -112,17 +103,17 @@ const addSettingsControls = createHigherOrderComponent((BlockEdit) => {
 
     const settings = {
       ...globalSettings, 
-      ...attributes[SETTINGS_ATTRIBUTE],
+      ...attributes[settingsAttribute],
     }
 
-    const enabledLabel = settings.enabled ? __('Enabled') : __('Disabled');
+    const enabledLabel = __('Enabled');
  
     return (
       <Fragment>
         <BlockEdit {...props} />
         <BlockRemovalListener onBlockRemove={handleBlockRemove} />
         <InspectorControls>
-          <PanelBody title={SETTINGS_LABEL} initialOpen={true}>
+          <PanelBody title={pluginName} initialOpen={true}>
             <ToggleControl
               label={enabledLabel}
               checked={settings.enabled}
@@ -149,13 +140,13 @@ const addSettingsControls = createHigherOrderComponent((BlockEdit) => {
         {settings.enabled && (
           <InspectorControls group="styles">
             <ToolsPanel
-              label={__(SETTINGS_LABEL)}
+              label={__(pluginName)}
               resetAll={resetAllStyles}
             >
               {Object.entries(styles).map(([key, { name, label, type, min, max, unit, options = [] }]) => (
                 <ToolsPanelItem
                   key={name}
-                  hasValue={() => attributes[SETTINGS_ATTRIBUTE][key] !== undefined}
+                  hasValue={() => attributes[settingsAttribute][key] !== undefined}
                   label={label}
                   onDeselect={() => updateSetting(key, null)} // Clear value when deselected
                   onSelect={() => updateSetting(key, globalSettings[key])} // Set to global value when selected
@@ -178,43 +169,34 @@ const addSettingsControls = createHigherOrderComponent((BlockEdit) => {
       </Fragment>
     );
   };
-}, 'withMediaControlsInspector');
+}, `with${pascalCase(pluginName)}Inspector`);
 
 wp.hooks.addFilter(
   'editor.BlockEdit',
-  `${PLUGIN_SLUG}mediacontrols/controls`,
+  `${pluginSlug}/controls`,
   addSettingsControls
 );
 
 const withSettingsStyle = createHigherOrderComponent((BlockListBlock) => {
   return (props) => {
-      if (!SUPPORTED_BLOCKS.includes(props.name)) {
-          return <BlockListBlock {...props} />;
-      }
+    const { attributes } = props;
+    const { [settingsAttribute]: settings } = attributes;
+    
+    if (!isSupportedBlock(props) || !settings) {
+        return <BlockListBlock {...props} />;
+    }
 
-      const { attributes: { [SETTINGS_ATTRIBUTE]: blockSettings, controls = false } } = props;
-      const settings = {
-        // ...globalSettings,
-        ...blockSettings
-      }
+    const wrapperProps = getWrapperProps(props, globalSettings, settings);
 
-      const wrapperProps = getWrapperProps(props);
-
-      console.log('wrapper props', wrapperProps);
-
-      if (settings.enabled) {
-        return (
-          <BlockListBlock {...props} wrapperProps={wrapperProps} />
-        );
-      }
-
-      return <BlockListBlock {...props} />;
+    return (
+      <BlockListBlock {...props} wrapperProps={wrapperProps} />
+    );
   };
 }, 'withMediaControlsSettingsStyle');
 
 
 addFilter(
   'editor.BlockListBlock',
-  `${PLUGIN_SLUG}/settings-style`,
+  `${pluginSlug}/settings-style`,
   withSettingsStyle
 );

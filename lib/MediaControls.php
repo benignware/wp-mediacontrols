@@ -8,10 +8,6 @@ class MediaControls extends PluginBase {
     private $settings = [];
 
     public function __construct($settings = []) {
-        parent::__construct();
-        $this->schema = get_settings_schema();
-        $this->settings = get_settings();
-
         // Hook to enqueue the dynamically generated stylesheet
         add_action('enqueue_block_assets', [$this, 'enqueue_block_assets']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_block_assets']);
@@ -24,8 +20,8 @@ class MediaControls extends PluginBase {
     
     public function enqueue_block_editor_assets() {
         $data = [
-            'schema' => $this->schema,
-            'settings' => $this->settings,
+            'schema' => $this->get_plugin_schema(),
+            'settings' => $this->get_settings(),
             'plugin' => $this->get_plugin_data(),
         ];
 
@@ -41,7 +37,7 @@ class MediaControls extends PluginBase {
 
     // Function to enqueue frontend and editor preview assets
     function enqueue_block_assets() {
-        $this->enqueue_script($this->handle, "dist/{$this->handle}.js");
+        $this->enqueue_script($this->handle, "dist/{$this->handle}.js", [], true);
         $this->enqueue_style($this->handle, "dist/{$this->handle}.css");
 
         if (is_admin()) {
@@ -69,7 +65,7 @@ class MediaControls extends PluginBase {
         }
 
         if (isset($settings['backgroundOpacity'])) {
-            $styles['--x-controls-bg-opacity'] = $settings['backgroundOpacity'];
+            $styles['--x-controls-bg-opacity'] = $settings['backgroundOpacity'] / 100;
         }
 
         if (isset($settings['textColor'])) {
@@ -83,15 +79,19 @@ class MediaControls extends PluginBase {
      * Generate the dynamic CSS
      */
     private function get_global_styles() {
-        $styles = apply_filters('mediacontrols_css', array_merge([
-            '--x-icon-play' => '"▶"',
-            '--x-icon-pause' => '"⏸"',
-            '--x-icon-expand' => '"⛶"',
-            '--x-icon-collapse' => '"⛶"',
-            '--x-icon-speaker' => '"\\1F50A"',
-            // '--x-panel-padding-x' => '10px',
-            // '--x-panel-padding-y' => '10px',
-        ], $this->get_styles($this->settings)));
+        $filter_name = str_replace('-', '_', $this->get_plugin_slug()) . '_global_styles';
+        $styles = apply_filters(
+            str_replace('-', '_', $this->get_plugin_slug()) . '_global_styles',
+            array_merge([
+                '--x-icon-play' => '"▶"',
+                '--x-icon-pause' => '"⏸"',
+                '--x-icon-expand' => '"⛶"',
+                '--x-icon-collapse' => '"⛶"',
+                '--x-icon-speaker' => '"\\1F50A"',
+                // '--x-panel-padding-x' => '10px',
+                // '--x-panel-padding-y' => '10px',
+            ], $this->get_styles($this->get_settings()))
+        );
 
         // Generate the CSS string
         $css = 'x-mediacontrols {';
@@ -103,22 +103,57 @@ class MediaControls extends PluginBase {
         return $css;
     }
 
-    function render_block($block_content, $block) {
+    protected function is_supported_block($block) {
         $supported_blocks = [
             'core/video',
             'core/cover',
         ];
-    
-        if (!in_array($block['blockName'], $supported_blocks)) {
+
+        $is_supported = in_array($block['blockName'], $supported_blocks);
+
+        if ($is_supported) {
+            if ($block['blockName'] === 'core/cover') {
+                $attrs = $block['attrs'] ?? null;
+                
+                if ($attrs && $attrs['backgroundType'] === 'video') {
+                    return true;
+                }
+
+                return false;
+            }
+        
+            return true;
+        }
+
+        return false;
+    }
+
+    function render_block($block_content, $block) {
+        if (!$this->is_supported_block($block)) {
             return $block_content;
         }
     
         $attrs = $block['attrs'];
     
-        $global_settings = get_settings();
-        $block_settings = $attrs['mediacontrols'] ?? [];
+        $settings_schema = $this->get_plugin_schema()['settings'];
+        $global_settings = array_merge($this->get_settings(), []);
+
+        // Remove style properties from global settings
+        foreach ($settings_schema as $key => $schema) {
+            $section = $schema['section'] ?? null;
+            
+            if ($section === 'style' ) {
+                unset($global_settings[$key]);
+            }
+        }
+
+        $settings_attribute = $this->get_plugin_id();
+        $block_settings = $attrs[$settings_attribute] ?? [];
     
-        $settings = array_merge($global_settings, $block_settings);
+        $settings = array_merge(
+            $global_settings,
+            $block_settings
+        );
     
         if (!$settings['enabled']) {
             return $block_content;

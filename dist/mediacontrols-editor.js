@@ -247,12 +247,175 @@
     }, _extends.apply(null, arguments);
   }
 
-  const PLUGIN_SLUG = 'mediacontrols';
-  const COMPONENT_CLASS = 'is-mediacontrols';
-  const UPDATE_MESSAGE_TYPE = 'updateMediacontrols';
-  const SETTINGS_ATTRIBUTE = 'mediacontrols';
-  const SETTINGS_LABEL = 'Media Controls';
-  const SUPPORTED_BLOCKS = ['core/video', 'core/cover'];
+  // Regexps involved with splitting words in various case formats.
+  const SPLIT_LOWER_UPPER_RE = /([\p{Ll}\d])(\p{Lu})/gu;
+  const SPLIT_UPPER_UPPER_RE = /(\p{Lu})([\p{Lu}][\p{Ll}])/gu;
+  // Used to iterate over the initial split result and separate numbers.
+  const SPLIT_SEPARATE_NUMBER_RE = /(\d)\p{Ll}|(\p{L})\d/u;
+  // Regexp involved with stripping non-word characters from the result.
+  const DEFAULT_STRIP_REGEXP = /[^\p{L}\d]+/giu;
+  // The replacement value for splits.
+  const SPLIT_REPLACE_VALUE = "$1\0$2";
+  // The default characters to keep after transforming case.
+  const DEFAULT_PREFIX_SUFFIX_CHARACTERS = "";
+  /**
+   * Split any cased input strings into an array of words.
+   */
+  function split(value) {
+      let result = value.trim();
+      result = result
+          .replace(SPLIT_LOWER_UPPER_RE, SPLIT_REPLACE_VALUE)
+          .replace(SPLIT_UPPER_UPPER_RE, SPLIT_REPLACE_VALUE);
+      result = result.replace(DEFAULT_STRIP_REGEXP, "\0");
+      let start = 0;
+      let end = result.length;
+      // Trim the delimiter from around the output string.
+      while (result.charAt(start) === "\0")
+          start++;
+      if (start === end)
+          return [];
+      while (result.charAt(end - 1) === "\0")
+          end--;
+      return result.slice(start, end).split(/\0/g);
+  }
+  /**
+   * Split the input string into an array of words, separating numbers.
+   */
+  function splitSeparateNumbers(value) {
+      const words = split(value);
+      for (let i = 0; i < words.length; i++) {
+          const word = words[i];
+          const match = SPLIT_SEPARATE_NUMBER_RE.exec(word);
+          if (match) {
+              const offset = match.index + (match[1] ?? match[2]).length;
+              words.splice(i, 1, word.slice(0, offset), word.slice(offset));
+          }
+      }
+      return words;
+  }
+  /**
+   * Convert a string to space separated lower case (`foo bar`).
+   */
+  function noCase(input, options) {
+      const [prefix, words, suffix] = splitPrefixSuffix(input, options);
+      return (prefix +
+          words.map(lowerFactory(options?.locale)).join(options?.delimiter ?? " ") +
+          suffix);
+  }
+  /**
+   * Convert a string to camel case (`fooBar`).
+   */
+  function camelCase(input, options) {
+      const [prefix, words, suffix] = splitPrefixSuffix(input, options);
+      const lower = lowerFactory(options?.locale);
+      const upper = upperFactory(options?.locale);
+      const transform = pascalCaseTransformFactory(lower, upper);
+      return (prefix +
+          words
+              .map((word, index) => {
+              if (index === 0)
+                  return lower(word);
+              return transform(word, index);
+          })
+              .join("") +
+          suffix);
+  }
+  /**
+   * Convert a string to pascal case (`FooBar`).
+   */
+  function pascalCase(input, options) {
+      const [prefix, words, suffix] = splitPrefixSuffix(input, options);
+      const lower = lowerFactory(options?.locale);
+      const upper = upperFactory(options?.locale);
+      const transform = pascalCaseTransformFactory(lower, upper);
+      return prefix + words.map(transform).join("") + suffix;
+  }
+  /**
+   * Convert a string to kebab case (`foo-bar`).
+   */
+  function kebabCase(input, options) {
+      return noCase(input, { delimiter: "-", ...options });
+  }
+  function lowerFactory(locale) {
+      return locale === false
+          ? (input) => input.toLowerCase()
+          : (input) => input.toLocaleLowerCase(locale);
+  }
+  function upperFactory(locale) {
+      return (input) => input.toLocaleUpperCase(locale);
+  }
+  function pascalCaseTransformFactory(lower, upper) {
+      return (word, index) => {
+          const char0 = word[0];
+          const initial = index > 0 && char0 >= "0" && char0 <= "9" ? "_" + char0 : upper(char0);
+          return initial + lower(word.slice(1));
+      };
+  }
+  function splitPrefixSuffix(input, options = {}) {
+      const splitFn = options.split ?? (options.separateNumbers ? splitSeparateNumbers : split);
+      const prefixCharacters = options.prefixCharacters ?? DEFAULT_PREFIX_SUFFIX_CHARACTERS;
+      const suffixCharacters = options.suffixCharacters ?? DEFAULT_PREFIX_SUFFIX_CHARACTERS;
+      let prefixIndex = 0;
+      let suffixIndex = input.length;
+      while (prefixIndex < input.length) {
+          const char = input.charAt(prefixIndex);
+          if (!prefixCharacters.includes(char))
+              break;
+          prefixIndex++;
+      }
+      while (suffixIndex > prefixIndex) {
+          const index = suffixIndex - 1;
+          const char = input.charAt(index);
+          if (!suffixCharacters.includes(char))
+              break;
+          suffixIndex = index;
+      }
+      return [
+          input.slice(0, prefixIndex),
+          splitFn(input.slice(prefixIndex, suffixIndex)),
+          input.slice(suffixIndex),
+      ];
+  }
+
+  const PLUGIN_SETTINGS_ID = 'mediacontrolsSettings';
+
+  const getSettingsSections = schema => Object.keys(schema).reduce((acc, key) => {
+    const item = schema[key];
+    const section = item.section || 'general';
+    (acc[section] = acc[section] || {})[key] = item; // Initialize section and assign item
+    return acc;
+  }, {});
+  const getPluginSettings = globalKey => {
+    const {
+      settings: globalSettings = {},
+      schema: {
+        settings: settingsSchema = {}
+      } = {},
+      plugin: {
+        Name: pluginName,
+        Version: pluginVersion
+      } = {}
+    } = window[globalKey] || {};
+    const pluginSlug = kebabCase(pluginName);
+    const pluginId = camelCase(pluginSlug);
+    return {
+      globalSettings,
+      settingsSchema,
+      pluginName,
+      pluginVersion,
+      pluginSlug,
+      pluginId,
+      componentClass: `is-${pluginSlug}`,
+      componentTag: `x-${pluginSlug}`,
+      settingsAttribute: pluginId,
+      settingsSections: getSettingsSections(settingsSchema),
+      updateMessageType: `${pluginId}UpdateMessage`,
+      settingsFormSelector: `#${pluginSlug}-settings`,
+      settingsInputSelector: `[name^="${pluginSlug}"]`,
+      settingsPreviewSelector: `#${pluginSlug}-preview`,
+      settingsResetButtonSelector: `#${pluginSlug}-reset-button`
+    };
+  };
 
   const {
     RangeControl,
@@ -414,6 +577,24 @@
   //   return 'string';
   // }
 
+  const {
+    componentClass,
+    settingsAttribute: settingsAttribute$1
+  } = getPluginSettings(PLUGIN_SETTINGS_ID);
+  const isSupportedBlock = block => {
+    const {
+      name,
+      attributes = null
+    } = block;
+    if (['core/video', 'core/cover'].includes(name)) {
+      if (attributes && name === 'core/cover') {
+        return attributes.backgroundType === 'video';
+      }
+      return true;
+    }
+    return false;
+  };
+
   // Helper function to build the controlslist attribute value
   const buildControlsList = (attributes, keys = ['fullscreenButton', 'overlayPlayButton', 'playButton', 'muteButton', 'timeline', 'volumeSlider', 'duration', 'currentTime']) => {
     const controlsList = [];
@@ -428,13 +609,17 @@
     });
     return controlsList.join(' ');
   };
-  const getWrapperProps = props => {
+  const getWrapperProps = (props, globalSettings = {}) => {
     const {
       attributes: {
-        [SETTINGS_ATTRIBUTE]: settings,
+        [settingsAttribute$1]: settings,
         controls
       }
     } = props;
+    const mergedSettings = {
+      ...globalSettings,
+      ...settings
+    };
     const styles = {
       '--x-controls-bg': settings.backgroundColor || '',
       '--x-controls-bg-opacity': settings.backgroundOpacity ? settings.backgroundOpacity / 100 : '',
@@ -447,10 +632,10 @@
       return acc;
     }, {});
     const result = {
-      className: COMPONENT_CLASS
+      className: mergedSettings.enabled ? componentClass : ''
     };
     result['data-controls'] = controls !== undefined && controls ? '' : undefined;
-    const controlslist = buildControlsList(settings);
+    const controlslist = buildControlsList(mergedSettings);
     result['data-controlslist'] = controlslist || undefined;
     if (Object.keys(style).length) {
       result.style = style;
@@ -480,30 +665,30 @@
     addFilter
   } = wp.hooks;
   const {
-    settings: globalSettings = {},
-    schema: settingsData
-  } = window[`${PLUGIN_SLUG}Settings`] || {};
-  const settingsSections = Object.keys(settingsData).reduce((acc, key) => {
-    const item = settingsData[key];
-    const section = item.section || 'general';
-    (acc[section] = acc[section] || {})[key] = item; // Initialize section and assign item
-    return acc;
-  }, {});
-  const dispatchUpdateMessage = (enabled, filter) => {
+    pluginName,
+    pluginSlug,
+    settingsAttribute,
+    settingsSections = {},
+    updateMessageType,
+    globalSettings
+  } = getPluginSettings(PLUGIN_SETTINGS_ID);
+  const dispatchUpdateMessage = () => {
     const iframeWindow = document.querySelector('[name="editor-canvas"]').contentWindow;
     if (iframeWindow) {
       iframeWindow.postMessage({
-        type: UPDATE_MESSAGE_TYPE
+        type: updateMessageType
       }, '*');
     }
   };
 
   // Add custom attributes
   const addSettingsAttribute = (settings, name) => {
-    if (SUPPORTED_BLOCKS.includes(name)) {
+    if (isSupportedBlock({
+      name
+    })) {
       settings.attributes = {
         ...settings.attributes,
-        [SETTINGS_ATTRIBUTE]: {
+        [settingsAttribute]: {
           type: 'object',
           default: {}
         }
@@ -513,7 +698,7 @@
   };
 
   // Add filter to include the custom attributes
-  wp.hooks.addFilter('blocks.registerBlockType', `${PLUGIN_SLUG}/settings`, addSettingsAttribute);
+  wp.hooks.addFilter('blocks.registerBlockType', `${pluginSlug}/settings`, addSettingsAttribute);
 
   // Extend BlockEdit to add custom controls to the sidebar
   const addSettingsControls = createHigherOrderComponent(BlockEdit => {
@@ -523,14 +708,10 @@
         setAttributes,
         name: blockName
       } = props;
-      const isSupportedBlock = SUPPORTED_BLOCKS.includes(blockName);
-
-      // Handle cover block with video background
-      const isVideo = blockName === 'core/cover' ? attributes.backgroundType === 'video' : isSupportedBlock;
-      if (!isVideo) {
+      if (!isSupportedBlock(props)) {
         return /*#__PURE__*/React.createElement(BlockEdit, props);
       }
-      const handleBlockRemove = removedBlock => {
+      const handleBlockRemove = () => {
         dispatchUpdateMessage();
       };
       const updateSetting = (key, value) => {
@@ -538,17 +719,17 @@
           const {
             [key]: _,
             ...newSettings
-          } = attributes[SETTINGS_ATTRIBUTE];
+          } = attributes[settingsAttribute];
           setAttributes({
             ...attributes,
-            [SETTINGS_ATTRIBUTE]: newSettings
+            [settingsAttribute]: newSettings
           });
           dispatchUpdateMessage();
         } else {
           setAttributes({
             ...attributes,
-            [SETTINGS_ATTRIBUTE]: {
-              ...attributes[SETTINGS_ATTRIBUTE],
+            [settingsAttribute]: {
+              ...attributes[settingsAttribute],
               [key]: value
             }
           });
@@ -568,19 +749,19 @@
           return acc;
         }, {});
         setAttributes({
-          [SETTINGS_ATTRIBUTE]: newSettings
+          [settingsAttribute]: newSettings
         });
         dispatchUpdateMessage();
       };
       const settings = {
         ...globalSettings,
-        ...attributes[SETTINGS_ATTRIBUTE]
+        ...attributes[settingsAttribute]
       };
-      const enabledLabel = settings.enabled ? __('Enabled') : __('Disabled');
+      const enabledLabel = __('Enabled');
       return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement(BlockEdit, props), /*#__PURE__*/React.createElement(BlockRemovalListener, {
         onBlockRemove: handleBlockRemove
       }), /*#__PURE__*/React.createElement(InspectorControls, null, /*#__PURE__*/React.createElement(PanelBody, {
-        title: SETTINGS_LABEL,
+        title: pluginName,
         initialOpen: true
       }, /*#__PURE__*/React.createElement(ToggleControl, {
         label: enabledLabel,
@@ -603,7 +784,7 @@
       })))))), settings.enabled && /*#__PURE__*/React.createElement(InspectorControls, {
         group: "styles"
       }, /*#__PURE__*/React.createElement(ToolsPanel, {
-        label: __(SETTINGS_LABEL),
+        label: __(pluginName),
         resetAll: resetAllStyles
       }, Object.entries(styles).map(([key, {
         name,
@@ -615,7 +796,7 @@
         options = []
       }]) => /*#__PURE__*/React.createElement(ToolsPanelItem, {
         key: name,
-        hasValue: () => attributes[SETTINGS_ATTRIBUTE][key] !== undefined,
+        hasValue: () => attributes[settingsAttribute][key] !== undefined,
         label: label,
         onDeselect: () => updateSetting(key, null) // Clear value when deselected
         ,
@@ -631,33 +812,25 @@
         unit
       }))))));
     };
-  }, 'withMediaControlsInspector');
-  wp.hooks.addFilter('editor.BlockEdit', `${PLUGIN_SLUG}mediacontrols/controls`, addSettingsControls);
+  }, `with${pascalCase(pluginName)}Inspector`);
+  wp.hooks.addFilter('editor.BlockEdit', `${pluginSlug}/controls`, addSettingsControls);
   const withSettingsStyle = createHigherOrderComponent(BlockListBlock => {
     return props => {
-      if (!SUPPORTED_BLOCKS.includes(props.name)) {
+      const {
+        attributes
+      } = props;
+      const {
+        [settingsAttribute]: settings
+      } = attributes;
+      if (!isSupportedBlock(props) || !settings) {
         return /*#__PURE__*/React.createElement(BlockListBlock, props);
       }
-      const {
-        attributes: {
-          [SETTINGS_ATTRIBUTE]: blockSettings,
-          controls = false
-        }
-      } = props;
-      const settings = {
-        // ...globalSettings,
-        ...blockSettings
-      };
-      const wrapperProps = getWrapperProps(props);
-      console.log('wrapper props', wrapperProps);
-      if (settings.enabled) {
-        return /*#__PURE__*/React.createElement(BlockListBlock, _extends({}, props, {
-          wrapperProps: wrapperProps
-        }));
-      }
-      return /*#__PURE__*/React.createElement(BlockListBlock, props);
+      const wrapperProps = getWrapperProps(props, globalSettings);
+      return /*#__PURE__*/React.createElement(BlockListBlock, _extends({}, props, {
+        wrapperProps: wrapperProps
+      }));
     };
   }, 'withMediaControlsSettingsStyle');
-  addFilter('editor.BlockListBlock', `${PLUGIN_SLUG}/settings-style`, withSettingsStyle);
+  addFilter('editor.BlockListBlock', `${pluginSlug}/settings-style`, withSettingsStyle);
 
 })();

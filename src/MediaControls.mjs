@@ -1307,9 +1307,7 @@ export default class MediaControls extends HTMLElement {
 
   set controls(value) {
     value = value === 'false' ? false : !!value;
-
-    console.log('*** SET CONTROLS: ', value, this.#controls);
-
+    
     if (value !== this.#controls) {
       const attrValue = this.hasAttribute('controls') ? true : false;
 
@@ -1326,8 +1324,6 @@ export default class MediaControls extends HTMLElement {
       if (this.#mediaElement) {
         this.#mediaElement.controls = false;
       }
-
-      console.log('NEW controls: ', value, this.#controls);
 
       this.update();
     }
@@ -1347,7 +1343,6 @@ export default class MediaControls extends HTMLElement {
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue === newValue) {
-      console.log('*** NO CHANGE');
       return;
     }
 

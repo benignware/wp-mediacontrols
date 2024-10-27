@@ -3,20 +3,14 @@
 namespace benignware\wp\mediacontrols;
 
 class Settings extends PluginBase {
+    private $options = [];
 
-    public function __construct() {
-        parent::__construct();
-        add_action('admin_menu', [$this, 'add_settings_page']);
-        add_action('admin_init', [$this, 'register_settings']);
-        add_action('admin_enqueue_scripts', [$this, 'enqueue_settings_scripts']);
-    }
-
-    public function get_settings() {
-      return get_settings();
-    }
-
-    public function get_settings_schema() {
-      return get_settings_schema();
+    public function __construct($options = []) {
+      $this->options = $options;
+      
+      add_action('admin_menu', [$this, 'add_settings_page']);
+      add_action('admin_init', [$this, 'register_settings']);
+      add_action('admin_enqueue_scripts', [$this, 'enqueue_settings_scripts']);
     }
 
     public function enqueue_settings_scripts($hook) {
@@ -79,13 +73,14 @@ class Settings extends PluginBase {
 
     public function register_settings() {
       $plugin_data = $this->get_plugin_data(); // Get plugin data
-      $settings_data = $this->get_settings_schema(); // Using get_settings_schema from base
+      $plugin_schema = $this->get_plugin_schema(); // Using get_settings_schema from base
+      $settings_data = $plugin_schema['settings']; // Get settings data
   
       register_setting(
           $this->get_plugin_slug() . '_settings_group', // Dynamic group
           $this->get_plugin_slug() . '_settings', // Dynamic settings
           [
-              'sanitize_callback' => __NAMESPACE__ . '\\sanitize_settings',
+              'sanitize_callback' => [$this,'sanitize_settings'],
               'show_in_rest' => true,
           ]
       );
@@ -93,15 +88,17 @@ class Settings extends PluginBase {
       // Loop over the settings data and add fields programmatically
       foreach ($settings_data as $setting_id => $setting) {
           $section = $setting['section'] . '_section'; // Create section ID
+          
           if (!has_action($this->get_plugin_slug() . '-settings', $section)) {
               add_settings_section(
                   $this->get_plugin_slug() . '_' . $setting['section'] . '_section',
                   ucfirst($setting['section']) . ' ' . $this->__('Settings'), // Using the translation method
                   null,
                   $this->get_plugin_slug() . '-settings',
-                  isset($setting['section']) && $setting['section'] === 'general' ? [
-                    'after_section' => $this->render_preview_section()
-                ] : []
+                  isset($setting['section'])
+                  && $setting['section'] === 'general'
+                  && function_exists(__NAMESPACE__ . '\\render_preview_section')
+                    ? [ 'after_section' => render_preview_section($this->get_settings()) ] : []
               );
           }
   
@@ -114,6 +111,41 @@ class Settings extends PluginBase {
               ['id' => $setting_id, 'setting' => $setting]
           );
       }
+    }
+
+    public function sanitize_settings($input) {
+      $output = [];
+      $settings_data = $this->get_plugin_schema()['settings'];
+  
+      foreach ($settings_data as $setting_id => $setting) {
+          $type = $setting['type'];
+  
+          $is_value = isset($input[$setting_id]);
+          
+          if (!$is_value) {
+              continue;
+          }
+  
+          $value = $input[$setting_id];
+  
+          switch ($type) {
+              case 'boolean':
+                  $output[$setting_id] = $value ? '1' : '';
+                  break;
+              case 'color':
+                  $output[$setting_id] = sanitize_hex_color($value);
+                  break;
+              case 'range':
+              case 'number':
+                  $output[$setting_id] = intval($value);
+                  break;
+              case 'select':
+                  $output[$setting_id] = sanitize_text_field($value);
+                  break;
+          }
+      }
+  
+      return $output;
     }
 
     public function render_field_by_type($args) {
@@ -203,27 +235,6 @@ class Settings extends PluginBase {
       </select>
       <input data-sync="<?= $id ?>" type="hidden" name="<?php echo $this->get_plugin_slug(); ?>_settings[<?php echo $id; ?>]" id="<?php echo $id; ?>_hidden" value="<?php echo esc_attr($custom); ?>" data-default="<?php echo esc_attr($args['default']); ?>" <?= $disabled ?> />
       <?php
-  }
-
-  public function render_preview_section() {
-    $options = $this->get_settings();
-    ob_start();
-    ?>
-    <h2><?php echo $this->__('Preview'); ?></h2>
-    <div id="<?= esc_attr($this->get_plugin_slug() . '-preview'); ?>" class="<?= esc_attr($options['enabled'] ? 'is-' . $this->get_plugin_slug() : ''); ?>" style="
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
-        max-width: 520px;
-    ">
-        <video
-            style="width: 100%; height: auto;"
-            src="<?php echo esc_url(plugins_url('assets/example.mp4', $this->get_plugin_file())); ?>"
-            controls
-        ></video>
-    </div>
-    <?php
-    return ob_get_clean();
   }
 }
 
