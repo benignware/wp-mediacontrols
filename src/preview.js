@@ -57,7 +57,7 @@ const { componentClass, componentTag, updateMessageType } = getPluginSettings(PL
     mutationsList.forEach((mutation) => {
       if (mutation.type === 'childList') {
         mutation.removedNodes.forEach((removedNode) => {
-          // Check if the removed node or its children have class 'is-mediacontrols'
+          // Check if the removed node or its children have component class 
           if (
             removedNode.classList && removedNode.classList.contains(componentClass)
             || removedNode.querySelector && removedNode.querySelector(`.${componentClass}`)

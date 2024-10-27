@@ -24,7 +24,7 @@ class PluginBase {
     }
 
     function get_settings() {
-        $settings = get_option(get_plugin_slug() . '_settings', []);
+        $settings = get_option($this->get_plugin_slug() . '_settings', []);
         $defaults = $this->get_default_settings();
 
         return array_merge($defaults, $settings);

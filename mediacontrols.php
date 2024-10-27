@@ -11,8 +11,6 @@
  */
 namespace benignware\wp\mediacontrols;
 
-require plugin_dir_path( __FILE__ ) . 'functions.php';
-// require plugin_dir_path(__FILE__) . 'settings.php';
 require plugin_dir_path( __FILE__ ) . 'lib/PluginData.php';
 require plugin_dir_path( __FILE__ ) . 'lib/PluginBase.php';
 require plugin_dir_path( __FILE__ ) . 'lib/Settings.php';
