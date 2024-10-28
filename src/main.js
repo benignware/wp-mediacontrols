@@ -1,2 +1,2 @@
 import './MediaControls.mjs';
-import './index.css';
+import './main.css';

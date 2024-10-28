@@ -3,13 +3,15 @@ import commonjs from '@rollup/plugin-commonjs';
 import css from 'rollup-plugin-css-only';
 import babel from '@rollup/plugin-babel';
 
+const pluginSlug = 'mediacontrols';
+
 export default [
     {
         input: 'src/editor.jsx',
         output: [{
-            file: 'dist/mediacontrols-editor.js',
+            file: `dist/${pluginSlug}-editor.js`,
             format: 'iife',
-            name: 'MediaControlsEditor',
+            name: `${pluginSlug}Editor`,
             globals: {
                 'react': 'wp.element',
                 'react-dom': 'wp.element'
@@ -29,34 +31,22 @@ export default [
     {
         input: 'src/settings.js',
         output: [{
-            file: 'dist/mediacontrols-settings.js',
+            file: `dist/${pluginSlug}-settings.js`,
             format: 'iife',
-            name: 'MediaControlsSettingsr',
+            name: `${pluginSlug}Settings`,
         }],
         plugins: [
             resolve(),
             commonjs(),
-            css({ output: 'mediacontrols-settings.css' }),
+            css({ output: `${pluginSlug}-settings.css` }),
         ],
     },
     {
-        input: 'src/preview.js',
+        input: 'src/main.js', // Frontend script entry point
         output: [{
-            file: 'dist/mediacontrols-preview.js',
+            file: `dist/${pluginSlug}-main.js`,
             format: 'iife',
-            name: 'MediaControlsPreviewr',
-        }],
-        plugins: [
-            resolve(),
-            commonjs(),
-        ],
-    },
-    {
-        input: 'src/index.js', // Frontend script entry point
-        output: [{
-            file: 'dist/mediacontrols.js',
-            format: 'iife',
-            name: 'mediacontrolsFrontend'
+            name: `${pluginSlug}Main`,
         }],
         plugins: [
             resolve(),
@@ -66,7 +56,7 @@ export default [
                 presets: ['@babel/preset-env'],
                 exclude: 'node_modules/**'
             }),
-            css({ output: 'mediacontrols.css' }),
+            css({ output: `${pluginSlug}-main.css` }),
         ]
     }
 ];

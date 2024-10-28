@@ -1,10 +1,13 @@
 import './settings.css';
-import { getPluginSettings } from './utils.js';
+import { getPluginSettings, getComponentProps } from './pluginUtils.js';
 import { PLUGIN_SETTINGS_ID } from './constants';
 import { getWrapperProps } from './functions';
 
 const {
+    pluginId,
+    defaultSettings,
     componentClass,
+    componentTag,
     updateMessageType,
     settingsAttribute,
     settingsFormSelector,
@@ -38,28 +41,86 @@ class Settings {
             .filter(el => !el.disabled)
             .forEach(el => {
                 const prop = el.name.split('[').pop().split(']')[0];
-                settings[prop] = el.value;
+                const isBool = el.dataset.type === 'boolean';
+                
+                settings[prop] = isBool ? el.value : el.value || el.dataset.default;
             });
+
+        for (const [key, value] of Object.entries(defaultSettings)) {
+            if (settings[key] === undefined) {
+                settings[key] = value;
+            }
+        }
 
         const { enabled = true } = settings;
         this.previewWrapper.classList.toggle(componentClass, enabled);
+        
         window.postMessage({ type: updateMessageType }, '*');
 
         const props = { attributes: { [settingsAttribute]: settings, controls: true } };
-        const { className, style, ...attrs } = getWrapperProps(props);
+        const wrapperProps = getWrapperProps(props);
+
+        const { className, style, ...attrs } = wrapperProps;
+
+        this.previewWrapper.dataset[pluginId] = JSON.stringify(wrapperProps);
 
         if (className) {
             this.previewWrapper.classList.add(className);
         }
 
         Object.entries(style).forEach(([styleProperty, value]) => {
+            if (value === undefined) {
+                this.previewWrapper.style.removeProperty(styleProperty);
+                return;
+            }
+
             this.previewWrapper.style.setProperty(styleProperty, value);
         });
+
         Object.entries(attrs).forEach(([attr, value]) => {
+            if (attr === 'className' || attr === 'style') {
+                return;
+            }
+
             if (value === undefined) {
                 this.previewWrapper.removeAttribute(attr);
             } else {
                 this.previewWrapper.setAttribute(attr, value);
+            }
+        });
+
+        if (!enabled && this.previewComponent) {
+            this.previewComponent.remove();
+            this.previewComponent = null;
+            return;
+        }
+
+        if (!this.previewComponent) {
+            this.previewComponent = document.createElement(componentTag);
+            this.previewWrapper.parentNode.insertBefore(this.previewComponent, this.previewWrapper);
+            this.previewComponent.for = this.previewWrapper.id;
+        }
+
+        const componentProps = getComponentProps(wrapperProps);
+
+        Object.entries(componentProps).forEach(([attr, value]) => {
+            if (attr === 'style' && typeof value === 'object') {
+                for (const [styleProp, styleValue] of Object.entries(value)) {
+                    if (styleValue === undefined) {
+                        this.previewComponent.style.removeProperty(styleProp);
+                        continue;
+                    }
+
+                    this.previewComponent.style.setProperty(styleProp, styleValue);
+                }
+
+                return;
+            }
+
+            if (value === undefined || value === null) {
+                this.previewComponent.removeAttribute(attr);
+            } else {
+                this.previewComponent.setAttribute(attr, value);
             }
         });
     }

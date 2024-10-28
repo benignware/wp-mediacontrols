@@ -359,6 +359,7 @@
   var _elementControlsObserver = /*#__PURE__*/new WeakMap();
   var _elementControlsObserverEnabled = /*#__PURE__*/new WeakMap();
   var _targetAttributeObserver = /*#__PURE__*/new WeakMap();
+  var _docObserver = /*#__PURE__*/new WeakMap();
   var MediaControls = /*#__PURE__*/function (_HTMLElement) {
     function MediaControls() {
       var _this;
@@ -391,6 +392,7 @@
       _classPrivateFieldInitSpec(_this, _elementControlsObserver, null);
       _classPrivateFieldInitSpec(_this, _elementControlsObserverEnabled, true);
       _classPrivateFieldInitSpec(_this, _targetAttributeObserver, null);
+      _classPrivateFieldInitSpec(_this, _docObserver, void 0);
       _defineProperty(_this, "handleTargetAttributeMutation", function () {
         var mutations = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
         _classPrivateFieldGet2(_containerElement, _this);
@@ -489,6 +491,7 @@
       _this.handlePointerLeave = _this.handlePointerLeave.bind(_this);
       _this.handleControlsListChange = _this.handleControlsListChange.bind(_this);
       _this.handleElementControlsChanged = _this.handleElementControlsChanged.bind(_this);
+      _this.handleDocMutation = _this.handleDocMutation.bind(_this);
       _this.handleTargetAttributeMutation = _this.handleTargetAttributeMutation.bind(_this);
       _this.handleElementControlsChanged = _this.handleElementControlsChanged.bind(_this);
       _this.update = _this.update.bind(_this);
@@ -552,6 +555,7 @@
             _classPrivateFieldGet2(_containerElement, this).removeEventListener('pointermove', this.handlePointerMove);
             _classPrivateFieldGet2(_containerElement, this).removeEventListener('pointerleave', this.handlePointerLeave);
             _classPrivateFieldGet2(_targetAttributeObserver, this).disconnect();
+            _classPrivateFieldGet2(_docObserver, this).disconnect();
           }
           _classPrivateFieldSet2(_containerElement, this, containerElement);
           if (_classPrivateFieldGet2(_containerElement, this)) {
@@ -899,6 +903,27 @@
         }
       }
     }, {
+      key: "handleDocMutation",
+      value: function handleDocMutation() {
+        if (this["for"] && (!this.forElement || this.forElement.id !== this["for"])) {
+          var targetElement = document.getElementById(this["for"]);
+          if (targetElement) {
+            this.forElement = targetElement;
+          }
+        }
+      }
+    }, {
+      key: "startDocObserver",
+      value: function startDocObserver() {
+        if (!_classPrivateFieldGet2(_docObserver, this)) {
+          _classPrivateFieldSet2(_docObserver, this, new MutationObserver(this.handleDocMutation));
+        }
+        _classPrivateFieldGet2(_docObserver, this).observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+      }
+    }, {
       key: "connectedCallback",
       value: function connectedCallback() {
         window.addEventListener('resize', this.handleResize);
@@ -994,17 +1019,27 @@
         _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('border-top-right-radius', style.getPropertyValue('border-top-right-radius'));
         _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('border-bottom-left-radius', style.getPropertyValue('border-bottom-left-radius'));
         _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('border-bottom-right-radius', style.getPropertyValue('border-bottom-right-radius'));
-        _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('transform', '');
-        var isPositionFixed = style.getPropertyValue('position') === 'fixed';
+
+        // this.#controlsFrame.style.setProperty('transform', '');
+        _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('left', '');
+        _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('top', '');
+        style.getPropertyValue('position') === 'fixed';
+        var containerBounds = _classPrivateFieldGet2(_containerElement, this).getBoundingClientRect();
+        // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
 
         // if (this.#for) {
-        var mediaElementBounds = !isPositionFixed ? _classPrivateFieldGet2(_mediaElement, this).getBoundingClientRect() : this.getBoundingClientRect();
-        _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('width', "".concat(mediaElementBounds.width, "px"));
-        _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('height', "".concat(mediaElementBounds.height, "px"));
+        // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
+        // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
+        var refBounds = containerBounds;
+        _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('width', "".concat(refBounds.width, "px"));
+        _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('height', "".concat(refBounds.height, "px"));
         var targetBounds = _classPrivateFieldGet2(_controlsFrame, this).getBoundingClientRect();
-        var top = mediaElementBounds.top - targetBounds.top;
-        var left = mediaElementBounds.left - targetBounds.left;
-        _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('transform', "translate(".concat(left, "px, ").concat(top, "px)"));
+        var top = refBounds.top - targetBounds.top;
+        var left = refBounds.left - targetBounds.left;
+
+        // this.#controlsFrame.style.setProperty('transform', `translate(${left}px, ${top}px)`);
+        _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('left', left + 'px');
+        _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('top', top + 'px');
         // }
 
         if (this.controls) {
@@ -1017,33 +1052,6 @@
       key: "render",
       value: function render() {
         this.update();
-      }
-    }, {
-      key: "forElement",
-      get: function get() {
-        return !this.contains(_classPrivateFieldGet2(_containerElement, this)) ? _classPrivateFieldGet2(_containerElement, this) : null;
-      },
-      set: function set(element) {
-        this.setTargetElement(element);
-      }
-    }, {
-      key: "for",
-      get: function get() {
-        return _classPrivateFieldGet2(_for, this);
-      },
-      set: function set(value) {
-        if (value !== this["for"]) {
-          if (value) {
-            this.setAttribute('for', value);
-          } else {
-            this.removeAttribute('for');
-          }
-          _classPrivateFieldSet2(_for, this, value);
-          if (_classPrivateFieldGet2(_for, this)) {
-            var targetElement = document.querySelector("#".concat(_classPrivateFieldGet2(_for, this)));
-            this.setTargetElement(targetElement);
-          }
-        }
       }
     }, {
       key: "controlslist",
@@ -1085,6 +1093,38 @@
             _classPrivateFieldGet2(_mediaElement, this).controls = false;
           }
           this.update();
+        }
+      }
+    }, {
+      key: "forElement",
+      get: function get() {
+        var targetElement = this.targetElement;
+        if (!targetElement) {
+          return null;
+        }
+      },
+      set: function set(element) {
+        this.setTargetElement(element);
+      }
+    }, {
+      key: "for",
+      get: function get() {
+        return _classPrivateFieldGet2(_for, this);
+      },
+      set: function set(value) {
+        if (value !== this["for"]) {
+          if (value) {
+            this.setAttribute('for', value);
+          } else {
+            this.removeAttribute('for');
+          }
+          _classPrivateFieldSet2(_for, this, value);
+          var forElement = document.querySelector("#".concat(value));
+          if (forElement) {
+            this.forElement = forElement;
+          } else {
+            this.startDocObserver();
+          }
         }
       }
     }, {

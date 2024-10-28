@@ -19,14 +19,14 @@ class Settings extends PluginBase {
       }
   
       $this->enqueue_script(
-          $this->get_plugin_slug() . '-settings',
+          'settings',
           'dist/' . $this->get_plugin_slug() . '-settings.js',
           [],
           true
       );
   
       $this->enqueue_style(
-          $this->get_plugin_slug() . '-settings',
+          'settings',
           'dist/' . $this->get_plugin_slug() . '-settings.css',
           [],
           null

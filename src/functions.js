@@ -1,5 +1,5 @@
 import { PLUGIN_SETTINGS_ID } from './constants';
-import { getPluginSettings, removeStyleProps } from './utils.js';
+import { getPluginSettings, mergeSettings } from './pluginUtils.js';
 
 const { componentClass, settingsAttribute } = getPluginSettings(PLUGIN_SETTINGS_ID);
 
@@ -45,14 +45,14 @@ export const buildControlsList = (attributes, keys = [
 
 export const getWrapperProps = (props, globalSettings = {}) => {
   const { attributes: { [settingsAttribute]: settings, controls } } = props;
-  const mergedSettings = { ...globalSettings, ...settings };
+  const mergedSettings = mergeSettings(globalSettings, settings);
   
   const styles = {
-    '--x-controls-bg': settings.backgroundColor || '',
-    '--x-controls-bg-opacity': settings.backgroundOpacity ? settings.backgroundOpacity / 100 : '',
-    '--x-controls-color': settings.textColor || '',
-    '--x-controls-slide': settings.panelAnimation ? settings.panelAnimation === 'slide' ? '1' : '0' : '',
-    '--x-controls-fade': settings.panelAnimation ? settings.panelAnimation === 'fade' ? '1' : '0' : '',
+    '--x-controls-bg': settings.backgroundColor,
+    '--x-controls-bg-opacity': settings.backgroundOpacity >= 0 ? settings.backgroundOpacity / 100 : undefined,
+    '--x-controls-color': settings.textColor,
+    '--x-controls-slide': settings.panelAnimation ? settings.panelAnimation === 'slide' ? '1' : '0' : undefined,
+    '--x-controls-fade': settings.panelAnimation ? settings.panelAnimation === 'fade' ? '1' : '0' : undefined,
   }
 
   const style = Object.entries(styles).reduce((acc, [key, value]) => {

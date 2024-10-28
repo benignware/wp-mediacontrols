@@ -379,13 +379,10 @@
 
   const PLUGIN_SETTINGS_ID = 'mediacontrolsSettings';
 
-  const getSettingsSections = schema => Object.keys(schema).reduce((acc, key) => {
-    const item = schema[key];
-    const section = item.section || 'general';
-    (acc[section] = acc[section] || {})[key] = item; // Initialize section and assign item
-    return acc;
-  }, {});
   const getPluginSettings = globalKey => {
+    if (!window[globalKey]) {
+      throw new Error(`Global settings not found: ${globalKey}`);
+    }
     const {
       settings: globalSettings = {},
       schema: {
@@ -395,7 +392,7 @@
         Name: pluginName,
         Version: pluginVersion
       } = {}
-    } = window[globalKey] || {};
+    } = window[globalKey];
     const pluginSlug = kebabCase(pluginName);
     const pluginId = camelCase(pluginSlug);
     return {
@@ -407,14 +404,47 @@
       pluginId,
       componentClass: `is-${pluginSlug}`,
       componentTag: `x-${pluginSlug}`,
+      defaultSettings: getDefaultSettings(settingsSchema),
       settingsAttribute: pluginId,
       settingsSections: getSettingsSections(settingsSchema),
       updateMessageType: `${pluginId}UpdateMessage`,
       settingsFormSelector: `#${pluginSlug}-settings`,
       settingsInputSelector: `[name^="${pluginSlug}"]`,
       settingsPreviewSelector: `#${pluginSlug}-preview`,
+      settingsPreviewComponentSelector: `#${pluginSlug}-preview-component`,
       settingsResetButtonSelector: `#${pluginSlug}-reset-button`
     };
+  };
+  const getSettingsSections = schema => Object.keys(schema).reduce((acc, key) => {
+    const item = schema[key];
+    const section = item.section || 'general';
+    (acc[section] = acc[section] || {})[key] = item; // Initialize section and assign item
+    return acc;
+  }, {});
+  const getDefaultSettings = settingsSchema => {
+    return Object.entries(settingsSchema).reduce((acc, [key, item]) => {
+      acc[key] = item.default;
+      return acc;
+    }, {});
+  };
+  const mergeSettings = (...settings) => {
+    return settings.reduce((merged, current) => {
+      for (const key in current) {
+        merged[key] = current[key];
+      }
+      return merged;
+    }, {});
+  };
+  const getComponentProps = props => {
+    const componentProps = {};
+    Object.entries(props).forEach(([key, value]) => {
+      let attr = key.replace(/data-/, '');
+      if (attr === 'className') {
+        attr = 'class';
+      }
+      componentProps[attr] = value;
+    });
+    return componentProps;
   };
 
   const {
@@ -556,27 +586,6 @@
     }));
   });
 
-  // Used to get related elements
-  // const getInputType = (el) => {
-  //   const relatedElements = getRelatedElements(el);
-
-  //   for (const relEl of relatedElements) {
-  //       const type = relEl.dataset.type
-  //           || {
-  //               checkbox: 'boolean',
-  //               radio: 'boolean', // TODO: radio may be select, need to check
-  //               select: 'select',
-  //               text: 'text',
-  //           }[relEl.type]
-
-  //       if (type) {
-  //           return type;
-  //       }
-  //   }
-
-  //   return 'string';
-  // }
-
   const {
     componentClass,
     settingsAttribute: settingsAttribute$1
@@ -616,16 +625,13 @@
         controls
       }
     } = props;
-    const mergedSettings = {
-      ...globalSettings,
-      ...settings
-    };
+    const mergedSettings = mergeSettings(globalSettings, settings);
     const styles = {
-      '--x-controls-bg': settings.backgroundColor || '',
-      '--x-controls-bg-opacity': settings.backgroundOpacity ? settings.backgroundOpacity / 100 : '',
-      '--x-controls-color': settings.textColor || '',
-      '--x-controls-slide': settings.panelAnimation ? settings.panelAnimation === 'slide' ? '1' : '0' : '',
-      '--x-controls-fade': settings.panelAnimation ? settings.panelAnimation === 'fade' ? '1' : '0' : ''
+      '--x-controls-bg': settings.backgroundColor,
+      '--x-controls-bg-opacity': settings.backgroundOpacity >= 0 ? settings.backgroundOpacity / 100 : undefined,
+      '--x-controls-color': settings.textColor,
+      '--x-controls-slide': settings.panelAnimation ? settings.panelAnimation === 'slide' ? '1' : '0' : undefined,
+      '--x-controls-fade': settings.panelAnimation ? settings.panelAnimation === 'fade' ? '1' : '0' : undefined
     };
     const style = Object.entries(styles).reduce((acc, [key, value]) => {
       acc[key] = value;
@@ -665,6 +671,9 @@
     addFilter
   } = wp.hooks;
   const {
+    useEffect
+  } = wp.element;
+  const {
     pluginName,
     pluginSlug,
     settingsAttribute,
@@ -673,7 +682,7 @@
     globalSettings
   } = getPluginSettings(PLUGIN_SETTINGS_ID);
   const dispatchUpdateMessage = () => {
-    const iframeWindow = document.querySelector('[name="editor-canvas"]').contentWindow;
+    const iframeWindow = document.querySelector('[name="editor-canvas"]')?.contentWindow;
     if (iframeWindow) {
       iframeWindow.postMessage({
         type: updateMessageType
@@ -737,8 +746,8 @@
         dispatchUpdateMessage();
       };
       const {
-        controls,
-        style: styles
+        controls = [],
+        style: styles = []
       } = settingsSections;
       const resetAllStyles = () => {
         const newSettings = Object.keys(settings).reduce((acc, key) => {
@@ -822,15 +831,22 @@
       const {
         [settingsAttribute]: settings
       } = attributes;
+      useEffect(() => {
+        dispatchUpdateMessage();
+        window.requestAnimationFrame(() => {
+          dispatchUpdateMessage();
+        });
+      }, [props]);
       if (!isSupportedBlock(props) || !settings) {
         return /*#__PURE__*/React.createElement(BlockListBlock, props);
       }
       const wrapperProps = getWrapperProps(props, globalSettings);
-      return /*#__PURE__*/React.createElement(BlockListBlock, _extends({}, props, {
-        wrapperProps: wrapperProps
-      }));
+      const componentProps = getComponentProps(wrapperProps);
+      return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement("x-mediacontrols", _extends({
+        for: 'block-' + props.clientId
+      }, componentProps)), /*#__PURE__*/React.createElement(BlockListBlock, props));
     };
-  }, 'withMediaControlsSettingsStyle');
+  }, `with${pascalCase(pluginName)}Styles`);
   addFilter('editor.BlockListBlock', `${pluginSlug}/settings-style`, withSettingsStyle);
 
 })();

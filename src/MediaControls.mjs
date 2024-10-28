@@ -41,6 +41,7 @@ export default class MediaControls extends HTMLElement {
   #elementControlsObserverEnabled = true;
 
   #targetAttributeObserver = null;
+  #docObserver;
 
   static MEDIA_SELECTOR = 'video, audio';
   static CONTROLS_TIMEOUT = 3000;
@@ -77,6 +78,7 @@ export default class MediaControls extends HTMLElement {
     this.handleControlsListChange = this.handleControlsListChange.bind(this);
     this.handleElementControlsChanged = this.handleElementControlsChanged.bind(this);
 
+    this.handleDocMutation = this.handleDocMutation.bind(this);
     this.handleTargetAttributeMutation = this.handleTargetAttributeMutation.bind(this);
     this.handleElementControlsChanged = this.handleElementControlsChanged.bind(this);
 
@@ -687,6 +689,8 @@ export default class MediaControls extends HTMLElement {
         this.#containerElement.removeEventListener('pointerleave', this.handlePointerLeave);
 
         this.#targetAttributeObserver.disconnect();
+
+        this.#docObserver.disconnect();
       }
 
       this.#containerElement = containerElement;
@@ -1128,6 +1132,27 @@ export default class MediaControls extends HTMLElement {
     }
   }
 
+  handleDocMutation() {
+    if (this.for && (!this.forElement || this.forElement.id !== this.for)) {
+      const targetElement = document.getElementById(this.for);
+
+      if (targetElement) {
+        this.forElement = targetElement;
+      }
+    }
+  }
+
+  startDocObserver() {
+    if (!this.#docObserver) {
+      this.#docObserver = new MutationObserver(this.handleDocMutation);
+    }
+
+    this.#docObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
   connectedCallback() {
     window.addEventListener('resize', this.handleResize);
     document.addEventListener('fullscreenchange', this.handleFullscreenChange);
@@ -1229,22 +1254,31 @@ export default class MediaControls extends HTMLElement {
     this.#controlsFrame.style.setProperty('border-bottom-left-radius', style.getPropertyValue('border-bottom-left-radius'));
     this.#controlsFrame.style.setProperty('border-bottom-right-radius', style.getPropertyValue('border-bottom-right-radius'));
 
-    this.#controlsFrame.style.setProperty('transform', '');
+    // this.#controlsFrame.style.setProperty('transform', '');
+    this.#controlsFrame.style.setProperty('left', '');
+    this.#controlsFrame.style.setProperty('top', '');
 
     const isPositionFixed = style.getPropertyValue('position') === 'fixed';
 
-    // if (this.#for) {
-      const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
+    const containerBounds = this.#containerElement.getBoundingClientRect();
+    // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
 
-      this.#controlsFrame.style.setProperty('width', `${mediaElementBounds.width}px`);
-      this.#controlsFrame.style.setProperty('height', `${mediaElementBounds.height}px`);
+    // if (this.#for) {
+      // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
+      // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
+      const refBounds = containerBounds;
+
+      this.#controlsFrame.style.setProperty('width', `${refBounds.width}px`);
+      this.#controlsFrame.style.setProperty('height', `${refBounds.height}px`);
 
       const targetBounds = this.#controlsFrame.getBoundingClientRect();
 
-      const top = mediaElementBounds.top - targetBounds.top;
-      const left = mediaElementBounds.left - targetBounds.left;
+      const top = refBounds.top - targetBounds.top;
+      const left = refBounds.left - targetBounds.left;
 
-      this.#controlsFrame.style.setProperty('transform', `translate(${left}px, ${top}px)`);
+      // this.#controlsFrame.style.setProperty('transform', `translate(${left}px, ${top}px)`);
+      this.#controlsFrame.style.setProperty('left', left + 'px');
+      this.#controlsFrame.style.setProperty('top', top + 'px');
     // }
 
     if (this.controls) {
@@ -1256,36 +1290,6 @@ export default class MediaControls extends HTMLElement {
 
   render() {
     this.update();
-  }
-
-  set forElement(element) {
-    this.setTargetElement(element);
-  }
-
-  get forElement() {
-    return !this.contains(this.#containerElement) ? this.#containerElement : null;
-  }
-
-  set for(value) {
-    if (value !== this.for) {
-      if (value) {
-        this.setAttribute('for', value);
-      } else {
-        this.removeAttribute('for');
-      }
-
-      this.#for = value;
-
-      if (this.#for) {
-        const targetElement = document.querySelector(`#${this.#for}`);
-        
-        this.setTargetElement(targetElement);
-      }
-    }
-  }
-
-  get for() {
-    return this.#for;
   }
 
   set controlslist(value) {
@@ -1335,6 +1339,42 @@ export default class MediaControls extends HTMLElement {
     }
 
     return !!this.#controls;
+  }
+
+  set forElement(element) {
+    this.setTargetElement(element);
+  }
+
+  get forElement() {
+    const targetElement = this.targetElement;
+
+    if (!targetElement) {
+      return null;
+    }
+  }
+
+  set for(value) {
+    if (value !== this.for) {
+      if (value) {
+        this.setAttribute('for', value);
+      } else {
+        this.removeAttribute('for');
+      }
+
+      this.#for = value;
+
+      const forElement = document.querySelector(`#${value}`);
+
+      if (forElement) {
+        this.forElement = forElement;
+      } else {
+        this.startDocObserver();
+      }
+    }
+  }
+
+  get for() {
+    return this.#for;
   }
 
   static get observedAttributes() {

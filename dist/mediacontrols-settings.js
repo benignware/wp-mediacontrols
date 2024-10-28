@@ -121,15 +121,11 @@
         ];
     }
 
-    const getSettingsSections = schema => Object.keys(schema).reduce((acc, key) => {
-      const item = schema[key];
-      const section = item.section || 'general';
-      (acc[section] = acc[section] || {})[key] = item; // Initialize section and assign item
-      return acc;
-    }, {});
-
-
     const getPluginSettings = (globalKey) => {
+      if (!window[globalKey]) {
+        throw new Error(`Global settings not found: ${globalKey}`);
+      }
+
       const {
         settings: globalSettings = {},
         schema: { settings: settingsSchema = {} } = {},
@@ -137,7 +133,7 @@
           Name: pluginName,
           Version: pluginVersion,
         } = {},
-      } = window[globalKey] || {};
+      } = window[globalKey];
 
       const pluginSlug = kebabCase(pluginName);
       const pluginId = camelCase(pluginSlug);
@@ -151,14 +147,55 @@
         pluginId,
         componentClass: `is-${pluginSlug}`,
         componentTag: `x-${pluginSlug}`,
+        defaultSettings: getDefaultSettings(settingsSchema),
         settingsAttribute: pluginId,
         settingsSections: getSettingsSections(settingsSchema),
         updateMessageType: `${pluginId}UpdateMessage`,
         settingsFormSelector: `#${pluginSlug}-settings`,
         settingsInputSelector: `[name^="${pluginSlug}"]`,
         settingsPreviewSelector: `#${pluginSlug}-preview`,
+        settingsPreviewComponentSelector: `#${pluginSlug}-preview-component`,
         settingsResetButtonSelector: `#${pluginSlug}-reset-button`,
       };
+    };
+
+    const getSettingsSections = schema => Object.keys(schema).reduce((acc, key) => {
+      const item = schema[key];
+      const section = item.section || 'general';
+      (acc[section] = acc[section] || {})[key] = item; // Initialize section and assign item
+      return acc;
+    }, {});
+
+    const getDefaultSettings = (settingsSchema) => {
+      return Object.entries(settingsSchema).reduce((acc, [key, item]) => {
+        acc[key] = item.default;
+        return acc;
+      }, {});
+    };
+
+    const mergeSettings = (...settings) => {
+      return settings.reduce((merged, current) => {
+        for (const key in current) {
+          merged[key] = current[key];
+        }
+        return merged;
+      }, {});
+    };
+
+    const getComponentProps = (props) => {
+      const componentProps = {};
+
+      Object.entries(props).forEach(([key, value]) => {
+        let attr = key.replace(/data-/, '');
+
+        if (attr === 'className') {
+          attr = 'class';
+        }
+
+        componentProps[attr] = value;
+      });
+
+      return componentProps;
     };
 
     const PLUGIN_SETTINGS_ID = 'mediacontrolsSettings';
@@ -193,14 +230,14 @@
 
     const getWrapperProps = (props, globalSettings = {}) => {
       const { attributes: { [settingsAttribute$1]: settings, controls } } = props;
-      const mergedSettings = { ...globalSettings, ...settings };
+      const mergedSettings = mergeSettings(globalSettings, settings);
       
       const styles = {
-        '--x-controls-bg': settings.backgroundColor || '',
-        '--x-controls-bg-opacity': settings.backgroundOpacity ? settings.backgroundOpacity / 100 : '',
-        '--x-controls-color': settings.textColor || '',
-        '--x-controls-slide': settings.panelAnimation ? settings.panelAnimation === 'slide' ? '1' : '0' : '',
-        '--x-controls-fade': settings.panelAnimation ? settings.panelAnimation === 'fade' ? '1' : '0' : '',
+        '--x-controls-bg': settings.backgroundColor,
+        '--x-controls-bg-opacity': settings.backgroundOpacity >= 0 ? settings.backgroundOpacity / 100 : undefined,
+        '--x-controls-color': settings.textColor,
+        '--x-controls-slide': settings.panelAnimation ? settings.panelAnimation === 'slide' ? '1' : '0' : undefined,
+        '--x-controls-fade': settings.panelAnimation ? settings.panelAnimation === 'fade' ? '1' : '0' : undefined,
       };
 
       const style = Object.entries(styles).reduce((acc, [key, value]) => {
@@ -226,7 +263,10 @@
     };
 
     const {
+        pluginId,
+        defaultSettings,
         componentClass,
+        componentTag,
         updateMessageType,
         settingsAttribute,
         settingsFormSelector,
@@ -260,28 +300,86 @@
                 .filter(el => !el.disabled)
                 .forEach(el => {
                     const prop = el.name.split('[').pop().split(']')[0];
-                    settings[prop] = el.value;
+                    const isBool = el.dataset.type === 'boolean';
+                    
+                    settings[prop] = isBool ? el.value : el.value || el.dataset.default;
                 });
+
+            for (const [key, value] of Object.entries(defaultSettings)) {
+                if (settings[key] === undefined) {
+                    settings[key] = value;
+                }
+            }
 
             const { enabled = true } = settings;
             this.previewWrapper.classList.toggle(componentClass, enabled);
+            
             window.postMessage({ type: updateMessageType }, '*');
 
             const props = { attributes: { [settingsAttribute]: settings, controls: true } };
-            const { className, style, ...attrs } = getWrapperProps(props);
+            const wrapperProps = getWrapperProps(props);
+
+            const { className, style, ...attrs } = wrapperProps;
+
+            this.previewWrapper.dataset[pluginId] = JSON.stringify(wrapperProps);
 
             if (className) {
                 this.previewWrapper.classList.add(className);
             }
 
             Object.entries(style).forEach(([styleProperty, value]) => {
+                if (value === undefined) {
+                    this.previewWrapper.style.removeProperty(styleProperty);
+                    return;
+                }
+
                 this.previewWrapper.style.setProperty(styleProperty, value);
             });
+
             Object.entries(attrs).forEach(([attr, value]) => {
+                if (attr === 'className' || attr === 'style') {
+                    return;
+                }
+
                 if (value === undefined) {
                     this.previewWrapper.removeAttribute(attr);
                 } else {
                     this.previewWrapper.setAttribute(attr, value);
+                }
+            });
+
+            if (!enabled && this.previewComponent) {
+                this.previewComponent.remove();
+                this.previewComponent = null;
+                return;
+            }
+
+            if (!this.previewComponent) {
+                this.previewComponent = document.createElement(componentTag);
+                this.previewWrapper.parentNode.insertBefore(this.previewComponent, this.previewWrapper);
+                this.previewComponent.for = this.previewWrapper.id;
+            }
+
+            const componentProps = getComponentProps(wrapperProps);
+
+            Object.entries(componentProps).forEach(([attr, value]) => {
+                if (attr === 'style' && typeof value === 'object') {
+                    for (const [styleProp, styleValue] of Object.entries(value)) {
+                        if (styleValue === undefined) {
+                            this.previewComponent.style.removeProperty(styleProp);
+                            continue;
+                        }
+
+                        this.previewComponent.style.setProperty(styleProp, styleValue);
+                    }
+
+                    return;
+                }
+
+                if (value === undefined || value === null) {
+                    this.previewComponent.removeAttribute(attr);
+                } else {
+                    this.previewComponent.setAttribute(attr, value);
                 }
             });
         }

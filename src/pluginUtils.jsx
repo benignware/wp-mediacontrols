@@ -134,26 +134,3 @@ const ColorPickerControl = withState({ isOpen: false })(
     );
   }
 );
-
-
-
-// Used to get related elements
-// const getInputType = (el) => {
-//   const relatedElements = getRelatedElements(el);
-
-//   for (const relEl of relatedElements) {
-//       const type = relEl.dataset.type
-//           || {
-//               checkbox: 'boolean',
-//               radio: 'boolean', // TODO: radio may be select, need to check
-//               select: 'select',
-//               text: 'text',
-//           }[relEl.type]
-
-//       if (type) {
-//           return type;
-//       }
-//   }
-
-//   return 'string';
-// }

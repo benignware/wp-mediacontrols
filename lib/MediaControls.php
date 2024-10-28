@@ -19,37 +19,18 @@ class MediaControls extends PluginBase {
     }
     
     public function enqueue_block_editor_assets() {
-        $data = [
-            'schema' => $this->get_plugin_schema(),
-            'settings' => $this->get_settings(),
-            'plugin' => $this->get_plugin_data(),
-        ];
-
         $this->enqueue_script(
-            "{$this->handle}-editor",
-            "dist/{$this->handle}-editor.js",
+            'editor',
+            "dist/{$this->get_plugin_slug()}-editor.js",
             ['wp-blocks', 'wp-element', 'wp-edit-post', 'wp-compose', 'wp-hooks', 'wp-i18n'],
             true
         );
-
-        wp_localize_script("{$this->handle}-editor", $this->handle . 'Settings', $data);
     }
 
     // Function to enqueue frontend and editor preview assets
     function enqueue_block_assets() {
-        $this->enqueue_script($this->handle, "dist/{$this->handle}.js", [], true);
-        $this->enqueue_style($this->handle, "dist/{$this->handle}.css");
-
-        if (is_admin()) {
-            $this->enqueue_script("{$this->handle}-preview", "dist/{$this->handle}-preview.js", ['wp-i18n']);
-        }
-    }
-
-    /**
-     * Generate the dynamic CSS and enqueue it
-     */
-    public function enqueue_global_styles() {
-        $this->enqueue_inline_style("{$this->handle}-global-styles", $this->get_global_styles());
+        $this->enqueue_script('main', "dist/{$this->get_plugin_slug()}-main.js", [], true);
+        $this->enqueue_style('main', "dist/{$this->get_plugin_slug()}-main.css");
     }
 
     private function get_styles($settings = []) {

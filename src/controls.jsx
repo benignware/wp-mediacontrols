@@ -1,7 +1,7 @@
 import { pascalCase } from 'change-case';
 import { PLUGIN_SETTINGS_ID } from './constants';
-import { getPluginSettings, removeStyleProps } from "./utils.js";
-import { BlockRemovalListener, renderControl } from "./utils.jsx";
+import { getPluginSettings, getComponentProps } from "./pluginUtils.js";
+import { BlockRemovalListener, renderControl } from "./pluginUtils.jsx";
 import { isSupportedBlock, getWrapperProps } from "./functions";
 
 const { __ } = wp.i18n;
@@ -15,6 +15,7 @@ const {
 const { InspectorControls } = wp.blockEditor;
 const { createHigherOrderComponent } = wp.compose;
 const { addFilter } = wp.hooks;
+const { useEffect } = wp.element;
 
 const {
   pluginName,
@@ -26,9 +27,10 @@ const {
 } = getPluginSettings(PLUGIN_SETTINGS_ID);
 
 const dispatchUpdateMessage = () => {
-  const iframeWindow = document.querySelector('[name="editor-canvas"]').contentWindow;
+  const iframeWindow = document.querySelector('[name="editor-canvas"]')?.contentWindow;
+  
   if (iframeWindow) {
-      iframeWindow.postMessage({ type: updateMessageType }, '*');
+    iframeWindow.postMessage({ type: updateMessageType }, '*');
   }
 };
 
@@ -83,7 +85,7 @@ const addSettingsControls = createHigherOrderComponent((BlockEdit) => {
       dispatchUpdateMessage();
     };
 
-    const { controls, style: styles } = settingsSections;
+    const { controls = [], style: styles = [] } = settingsSections;
 
     const resetAllStyles = () => {
       const newSettings = Object.keys(settings).reduce((acc, key) => {
@@ -181,18 +183,30 @@ const withSettingsStyle = createHigherOrderComponent((BlockListBlock) => {
   return (props) => {
     const { attributes } = props;
     const { [settingsAttribute]: settings } = attributes;
+
+    useEffect(() => {
+      dispatchUpdateMessage();
+
+      window.requestAnimationFrame(() => {
+        dispatchUpdateMessage();
+      });
+    }, [props]);
     
     if (!isSupportedBlock(props) || !settings) {
         return <BlockListBlock {...props} />;
     }
 
     const wrapperProps = getWrapperProps(props, globalSettings, settings);
+    const componentProps = getComponentProps(wrapperProps);
 
     return (
-      <BlockListBlock {...props} wrapperProps={wrapperProps} />
+      <Fragment>
+        <x-mediacontrols for={'block-' + props.clientId} {...componentProps} />
+        <BlockListBlock {...props}/>
+      </Fragment>
     );
   };
-}, 'withMediaControlsSettingsStyle');
+}, `with${pascalCase(pluginName)}Styles`);
 
 
 addFilter(

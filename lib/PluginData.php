@@ -93,7 +93,7 @@ class PluginData {
 
     public function get_plugin_slug() {
         $data = $this->get_plugin_data();
-        $slug = $data['PluginSlug'] ?? $data['Name'];
+        $slug = $data['Name'] ?? $data['Name'];
         
         return sanitize_title($slug);
     }
