@@ -33,7 +33,7 @@ class MediaControls extends PluginBase {
         $this->enqueue_style('main', "dist/{$this->get_plugin_slug()}-main.css");
     }
 
-    private function get_styles($settings = []) {
+    protected function get_styles($settings = []) {
         $styles = [];
 
         if (isset($settings['panelAnimation'])) {
@@ -56,32 +56,25 @@ class MediaControls extends PluginBase {
         return $styles;
     }
 
+    protected function get_css_selector() {
+        return 'x-mediacontrols';
+    }
+
     /**
      * Generate the dynamic CSS
      */
-    private function get_global_styles() {
-        $filter_name = str_replace('-', '_', $this->get_plugin_slug()) . '_global_styles';
-        $styles = apply_filters(
-            str_replace('-', '_', $this->get_plugin_slug()) . '_global_styles',
-            array_merge([
-                '--x-icon-play' => '"▶"',
-                '--x-icon-pause' => '"⏸"',
-                '--x-icon-expand' => '"⛶"',
-                '--x-icon-collapse' => '"⛶"',
-                '--x-icon-speaker' => '"\\1F50A"',
-                // '--x-panel-padding-x' => '10px',
-                // '--x-panel-padding-y' => '10px',
-            ], $this->get_styles($this->get_settings()))
-        );
+    public function get_global_styles($defaults = []) {
+        $defaults = array_merge([
+            '--x-icon-play' => '"▶"',
+            '--x-icon-pause' => '"⏸"',
+            '--x-icon-expand' => '"⛶"',
+            '--x-icon-collapse' => '"⛶"',
+            '--x-icon-speaker' => '"\\1F50A"',
+            // '--x-panel-padding-x' => '10px',
+            // '--x-panel-padding-y' => '10px',
+        ], $defaults);
 
-        // Generate the CSS string
-        $css = 'x-mediacontrols {';
-        foreach ($styles as $name => $value) {
-            $css .= "{$name}: {$value};";
-        }
-        $css .= '}';
-
-        return $css;
+        return parent::get_global_styles($defaults);
     }
 
     protected function is_supported_block($block) {
@@ -140,49 +133,41 @@ class MediaControls extends PluginBase {
             return $block_content;
         }
     
-        $controls = $attrs['controls'];
+        $controls = $attrs['controls'] ?? false;
+        
         $control_attrs = ['showPlayButton', 'showTimeline', 'showCurrentTime', 'showDuration', 'showMuteButton', 'showVolumeSlider', 'showFullscreenButton'];
         $controlslist = implode(' ', array_map(function($control_attr) {
             return 'no' . strtolower(preg_replace('/^show/', '', $control_attr));
         },  array_filter($control_attrs, function($control_attr) use ($settings) {
             return !$settings[$control_attr];
         })));
-    
-        // Construct the controls list from enabled controls
-        $controls_list = [];
-        foreach ($controls as $control => $is_enabled) {
-            if (!$is_enabled) {
-                $controls_list[] = 'no' . strtolower(preg_replace('/([A-Z])/', '-$1', $control));
-            }
-        }
-        $controls_list_str = trim(implode(' ', $controls_list));
-    
-        // Add class and attribute for mediacontrols
+
         $doc = new \DOMDocument();
-        libxml_use_internal_errors(true);
-        $doc->loadHTML(mb_convert_encoding($block_content, 'HTML-ENTITIES'), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        @$doc->loadHTML('<?xml encoding="utf-8" ?>' . $block_content);
         $xpath = new \DOMXPath($doc);
-        
-        $video = $xpath->query("//video")->item(0);
     
+        $body = $xpath->query('//body')->item(0);
+        $children = $xpath->query('//body/*');
+
+        $block_name = preg_replace('/^core\//', '', $block['blockName']);
+        $block_class = "wp-block-$block_name";
+        $block_element = $xpath->query(".//*[contains(concat(' ', normalize-space(@class), ' '), ' " . $block_class . " ')]")->item(0);
+        
+        if (!$block_element) {
+            return $block_content;
+        }
+
+        $video = $xpath->query(".//video")->item(0);
+
         if (!$video) {
             return $block_content;
         }
     
         $video->setAttribute('controls', $controls);
+        
+        $id = $block_element->hasAttribute('id') ? $block_element->getAttribute('id') : uniqid('mediacontrols-');
     
-        $container = $xpath->query("//*")->item(0);
-        
-        if (!$container) {
-            return $block_content;
-        }
-        
-        $container->setAttribute('class', trim($container->getAttribute('class') . ' is-mediacontrols'));
-        // $container->setAttribute('controlslist', esc_attr($controls_list_str));
-        
-        $id = $container->hasAttribute('id') ? $container->getAttribute('id') : uniqid('mediacontrols-');
-    
-        $container->setAttribute('id', $id);
+        $block_element->setAttribute('id', $id);
     
         $component = $doc->createElement('x-mediacontrols');
         $component->setAttribute('for', $id);
@@ -203,10 +188,11 @@ class MediaControls extends PluginBase {
     
         $component->setAttribute('style', $style);
     
-        $doc->insertBefore($component, $container);
-    
+        $block_element->parentNode->insertBefore($component, $block_element);
+        
         $block_content = $doc->saveHTML();
-        libxml_clear_errors();
+
+        $block_content = preg_replace('~(?:<\?[^>]*>|<(?:!DOCTYPE|/?(?:html|body))[^>]*>)\s*~i', '', $block_content);
     
         return $block_content;
     }

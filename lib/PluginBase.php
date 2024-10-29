@@ -19,7 +19,15 @@ class PluginBase {
         throw new \BadMethodCallException("Method $name does not exist.");
     }
 
-    function get_plugin_handle() {
+    protected function get_plugin_hook() {
+        return str_replace('-', '_', $this->get_plugin_slug());
+    }
+
+    protected function apply_filters($hook, $value, ...$args) {
+        return apply_filters("{$this->get_plugin_hook()}/$hook", $value, ...$args);
+    }
+
+    protected function get_plugin_handle() {
         return $this->get_plugin_slug();
     }
 
@@ -85,8 +93,40 @@ class PluginBase {
         ];
     }
 
-    protected function get_global_css() {
-        return '';
+    protected function get_styles($settings = []) {
+        $styles = $this->apply_filters('get_styles', [], $settings);
+
+        return $styles;
+    }
+
+    protected function get_css_selector() {
+        return ".is-{$this->get_plugin_slug()}";
+    }
+
+    public function get_global_styles($defaults = []) {
+        $styles = $this->get_styles($this->get_settings());
+        $styles = array_merge($defaults, $styles);
+        $styles = $this->apply_filters('get_global_styles', $styles);
+
+        return $styles;
+    }
+
+    protected function get_css_rule($selector, $styles = []) {
+        $css = $selector . ' {';
+        foreach ($styles as $name => $value) {
+            $css .= "{$name}: {$value};";
+        }
+        $css .= '}';
+        $css = $this->apply_filters('get_css_rule', $css, $selector, $styles);
+
+        return $css;
+    }
+
+    public function get_global_css() {
+        $css = $this->get_css_rule($this->get_css_selector(), $this->get_global_styles());
+        $css = $this->apply_filters('get_global_css', $css);
+
+        return $css;
     }
 
     public function enqueue_global_styles() {

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3a2f0d22b65918e8c1f0e88c604ab0ba",
+    "content-hash": "120816dbe93e4f05e31a51d2ce1a6600",
     "packages": [
         {
             "name": "composer/installers",
@@ -159,6 +159,16 @@
         }
     ],
     "packages-dev": [
+        {
+            "name": "benignware/agnosticon",
+            "version": "v0.0.9",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/benignware/wp-agnosticon.git",
+                "reference": "v0.0.9"
+            },
+            "type": "wordpress-plugin"
+        },
         {
             "name": "benignware/benignware-connect",
             "version": "v1.0.4",

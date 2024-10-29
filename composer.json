@@ -1,6 +1,6 @@
 {
   "name": "benignware/wp-mediacontrols",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "wordpress-plugin",
   "license": "MIT",
   "description": "Consistent media controls across browsers",
@@ -34,6 +34,21 @@
       }
     }
   }, {
+    "type": "composer",
+    "url": "https://wpackagist.org"
+  }, {
+    "type": "package",
+    "package": {
+      "name": "benignware/agnosticon",
+      "version": "v0.0.9",
+      "type": "wordpress-plugin",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/benignware/wp-agnosticon.git",
+        "reference": "v0.0.9"
+      }
+    }
+  }, {
     "type":"package",
     "package": {
       "name": "wptrt/theme-unit-test",
@@ -52,6 +67,7 @@
   "require-dev": {
     "wptrt/theme-unit-test": "dev-master",
     "benignware/benignware-connect": ">=1.0.4",
+    "benignware/agnosticon": ">=0.0.9",
     "wpackagist-plugin/icon-fonts": ">=1.0.0",
     "wpackagist-plugin/instant-images": "^6.1.2",
     "wpackagist-theme/twentyseventeen": ">=2.9",

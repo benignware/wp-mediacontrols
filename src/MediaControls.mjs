@@ -98,7 +98,7 @@ export default class MediaControls extends HTMLElement {
           --x-controls-padding-x: 14px;
           --x-controls-padding-y: 12px;
           --x-controls-gap: 10px;
-          display: block;
+          display: contents;
           position: relative;
           font-family: var(--x-font-family, sans-serif);
           font-size: var(--x-font-size, 0.9rem);
@@ -121,18 +121,6 @@ export default class MediaControls extends HTMLElement {
         :host video::-webkit-media-controls-panel {
             display: none !important;
             opacity: 1 !important;
-        }
-
-        /*:host slot {
-          display: block;
-          overflow: hidden;
-          pointer-events: none;
-          outline: 2px solid red;
-        }*/
-
-        :host([for]) {
-          display: block;
-          overflow: visible;
         }
 
         :host::part(body) {
@@ -456,7 +444,6 @@ export default class MediaControls extends HTMLElement {
         .mute-button ~ input[type=range] {
           /* outline: 1px solid pink !important; */
         }
-
 
         .mute-button ~ input[type=range] {
           max-width: calc(
@@ -1254,19 +1241,21 @@ export default class MediaControls extends HTMLElement {
     this.#controlsFrame.style.setProperty('border-bottom-left-radius', style.getPropertyValue('border-bottom-left-radius'));
     this.#controlsFrame.style.setProperty('border-bottom-right-radius', style.getPropertyValue('border-bottom-right-radius'));
 
-    // this.#controlsFrame.style.setProperty('transform', '');
-    this.#controlsFrame.style.setProperty('left', '');
-    this.#controlsFrame.style.setProperty('top', '');
+    this.#controlsFrame.style.setProperty('transform', '');
+    // this.#controlsFrame.style.setProperty('left', '');
+    // this.#controlsFrame.style.setProperty('top', '');
 
     const isPositionFixed = style.getPropertyValue('position') === 'fixed';
 
     const containerBounds = this.#containerElement.getBoundingClientRect();
-    // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
+    const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : containerBounds;
+    // const mediaElementBounds = this.#mediaElement.getBoundingClientRect();
+
 
     // if (this.#for) {
       // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
       // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
-      const refBounds = containerBounds;
+      const refBounds = mediaElementBounds;
 
       this.#controlsFrame.style.setProperty('width', `${refBounds.width}px`);
       this.#controlsFrame.style.setProperty('height', `${refBounds.height}px`);
@@ -1276,9 +1265,9 @@ export default class MediaControls extends HTMLElement {
       const top = refBounds.top - targetBounds.top;
       const left = refBounds.left - targetBounds.left;
 
-      // this.#controlsFrame.style.setProperty('transform', `translate(${left}px, ${top}px)`);
-      this.#controlsFrame.style.setProperty('left', left + 'px');
-      this.#controlsFrame.style.setProperty('top', top + 'px');
+      this.#controlsFrame.style.setProperty('transform', `translate(${left}px, ${top}px)`);
+      // this.#controlsFrame.style.setProperty('left', left + 'px');
+      // this.#controlsFrame.style.setProperty('top', top + 'px');
     // }
 
     if (this.controls) {

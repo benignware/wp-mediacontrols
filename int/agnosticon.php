@@ -1,6 +1,6 @@
 <?php
 
-namespace benignware\wp\mediacontrols;
+namespace benignware\wp\mediacontrols\agnosticon;
 
 use benignware\wp\agnosticon\get_icon;
 use benignware\wp\agnosticon\get_icon_meta;
@@ -8,9 +8,8 @@ use benignware\wp\agnosticon\get_icon_meta;
 /**
  * Example filter function to modify the default properties
  */
-function modify_mediacontrols_css($styles) {
+function get_global_styles($styles) {
   if (function_exists('benignware\wp\agnosticon\get_icon_meta')) {
-    
     foreach ($styles as $name => $value) {
       if (strpos($name, '--x-icon-') === 0) {
         $icon_name = substr($name, 9);
@@ -40,8 +39,8 @@ function modify_mediacontrols_css($styles) {
         }
       }
     }
-
   }
+
   return $styles;
 }
-add_filter('mediacontrols_css', 'benignware\wp\mediacontrols\modify_mediacontrols_css');
+add_filter('mediacontrols/get_global_styles', 'benignware\wp\mediacontrols\agnosticon\get_global_styles');
