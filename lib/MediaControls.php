@@ -147,11 +147,11 @@ class MediaControls extends PluginBase {
         $xpath = new \DOMXPath($doc);
     
         $body = $xpath->query('//body')->item(0);
-        $children = $xpath->query('//body/*');
 
         $block_name = preg_replace('/^core\//', '', $block['blockName']);
         $block_class = "wp-block-$block_name";
         $block_element = $xpath->query(".//*[contains(concat(' ', normalize-space(@class), ' '), ' " . $block_class . " ')]")->item(0);
+        // $block_element = $block_element ?? $xpath->query(".//*[contains(concat(' ', normalize-space(@class), ' '), ' " . $block_class . "-')]")->item(0);
         
         if (!$block_element) {
             return $block_content;
@@ -188,11 +188,13 @@ class MediaControls extends PluginBase {
     
         $component->setAttribute('style', $style);
     
-        $block_element->parentNode->insertBefore($component, $block_element);
+        // $block_element->parentNode->insertBefore($component, $block_element);
+        $body->insertBefore($component, $body->firstChild);
         
         $block_content = $doc->saveHTML();
-
         $block_content = preg_replace('~(?:<\?[^>]*>|<(?:!DOCTYPE|/?(?:html|body))[^>]*>)\s*~i', '', $block_content);
+
+        $block_content = "<!-- Media Controls -->\n" . $block_content;
     
         return $block_content;
     }
