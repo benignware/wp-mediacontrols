@@ -4,7 +4,7 @@
  * Plugin URI: https://benignware.com
  * Plugin Slug: mediacontrols
  * Description: Consistent media controls across browsers
- * Version: 0.1.4
+ * Version: 0.1.5
  * Author: Rafael Nowrotek
  * Author URI: https:/benignware.com
  * Network: true

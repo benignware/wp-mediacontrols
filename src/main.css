@@ -1,14 +1,17 @@
 /* Target the common ancestor with the container class */
-.mediacontrols-fullscreen-container *:not(x-mediacontrols) {
-  display: none;
+.mediacontrols-fullscreen-container * {
+  display: none !important;
 }
 
 /* Display only elements in the active path */
-.mediacontrols-fullscreen-container .mediacontrols-fullscreen-active:not(x-mediacontrols),
-.mediacontrols-fullscreen-container .mediacontrols-fullscreen-active *:not(x-mediacontrols) {
-  display: block;
+.mediacontrols-fullscreen-container .mediacontrols-fullscreen-active,
+.mediacontrols-fullscreen-container .mediacontrols-fullscreen-active video {
+  display: block !important;
 }
 
+.mediacontrols-fullscreen-container x-mediacontrols.mediacontrols-fullscreen-active {
+  display: contents !important;
+}
 
 .mediacontrols-fullscreen-container x-mediacontrols::part(controls-frame) {
   z-index: 1000;

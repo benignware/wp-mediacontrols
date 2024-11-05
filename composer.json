@@ -1,6 +1,6 @@
 {
   "name": "benignware/wp-mediacontrols",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "wordpress-plugin",
   "license": "MIT",
   "description": "Consistent media controls across browsers",
