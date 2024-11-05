@@ -46,13 +46,13 @@ class PluginBase {
         );
     }
 
-    protected function enqueue_style($handle, $url, $deps = [], $in_footer = true) {
+    protected function enqueue_style($handle, $url, $deps = [], $media = 'all') {
         wp_enqueue_style(
             "{$this->get_plugin_handle()}-{$handle}",
             plugins_url($url, PluginData::get_instance()->get_plugin_file()),
             $deps,
             filemtime(plugin_dir_path(PluginData::get_instance()->get_plugin_file()) . $url),
-            $in_footer
+            $media
         );
     }
 

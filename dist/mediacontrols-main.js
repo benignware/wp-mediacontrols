@@ -38,6 +38,9 @@
   function _classPrivateFieldSet2(s, a, r) {
     return s.set(_assertClassBrand(s, a), r), r;
   }
+  function _classPrivateMethodInitSpec(e, a) {
+    _checkPrivateRedeclaration(e, a), a.add(e);
+  }
   function _construct(t, e, r) {
     if (_isNativeReflectConstruct()) return Reflect.construct.apply(null, arguments);
     var o = [null];
@@ -332,6 +335,16 @@
     }]);
   }(/*#__PURE__*/_wrapNativeSuper(Set));
 
+  function getCommonAncestor() {
+    var reducer = function reducer(prev, current) {
+      return current.parentElement.contains(prev) ? current.parentElement : prev;
+    };
+    for (var _len = arguments.length, elements = new Array(_len), _key = 0; _key < _len; _key++) {
+      elements[_key] = arguments[_key];
+    }
+    return elements.reduce(reducer, elements[0]);
+  }
+
   var formatCurrentTime = function formatCurrentTime(time, duration) {
     var minutes = Math.floor(time / 60);
     var seconds = Math.floor(time % 60);
@@ -360,11 +373,13 @@
   var _elementControlsObserverEnabled = /*#__PURE__*/new WeakMap();
   var _targetAttributeObserver = /*#__PURE__*/new WeakMap();
   var _docObserver = /*#__PURE__*/new WeakMap();
+  var _MediaControls_brand = /*#__PURE__*/new WeakSet();
   var MediaControls = /*#__PURE__*/function (_HTMLElement) {
     function MediaControls() {
       var _this;
       _classCallCheck(this, MediaControls);
       _this = _callSuper(this, MediaControls);
+      _classPrivateMethodInitSpec(_this, _MediaControls_brand);
       _classPrivateFieldInitSpec(_this, _internals, void 0);
       _classPrivateFieldInitSpec(_this, _slot, void 0);
       _classPrivateFieldInitSpec(_this, _mediaElement, void 0);
@@ -502,11 +517,11 @@
       _classPrivateFieldSet2(_controlslist, _this, new MediaControlsList(_this.handleControlsListChange));
       _classPrivateFieldSet2(_elementControlsObserver, _this, new MutationObserver(_this.handleElementControlsChanged));
       _classPrivateFieldSet2(_targetAttributeObserver, _this, new MutationObserver(_this.handleTargetAttributeMutation));
-      var html = "\n      <style>\n        :host {\n          --x-controls-padding-x: 14px;\n          --x-controls-padding-y: 12px;\n          --x-controls-gap: 10px;\n          display: contents;\n          position: relative;\n          font-family: var(--x-font-family, sans-serif);\n          font-size: var(--x-font-size, 0.9rem);\n        }\n\n        :host(:state(--fullscreen)) {\n            width: 100vw !important;\n            height: 100vh !important;\n            position: fixed !important;\n            top: 0 !important;\n            left: 0 !important;\n            right: 0 !important;\n            bottom: 0 !important;\n        }\n\n        :host figure {\n          display: flex;\n        }\n\n        :host video::-webkit-media-controls-panel {\n            display: none !important;\n            opacity: 1 !important;\n        }\n\n        :host::part(body) {\n          position: relative;\n          display: flex;\n        }\n\n        :host::part(controls-frame) {\n          position: absolute;\n          top: 0;\n          left: 0;\n          right: 0;\n          bottom: 0;\n          overflow: hidden;\n          pointer-events: none;\n          z-index: 1;\n        }\n\n        /* controls panel */\n        :host::part(controls-panel) {\n          pointer-events: auto;\n          position: absolute;\n          left: 0;\n          right: 0;\n          bottom: 0;\n          /*background: var(--x-controls-bg, color-mix(in srgb, black 45%, transparent));*/\n          background: rgba(from var(--x-controls-bg, black) r g b / var(--x-controls-bg-opacity, 0.55));\n          color: var(--x-controls-color, #fff);\n          transition-delay: 0s;\n          padding: var(--x-controls-padding-y, 0.5rem) var(--x-controls-padding-x, 0.5rem);\n          /*gap: var(--x-controls-gap, 0.5rem);*/\n        }\n\n        :host::part(controls-panel) {\n          transform: translateY(\n            calc(\n              100% * var(--x-controls-slide, 1) +\n              0% * (1 - var(--x-controls-slide, 1))\n            )\n          );\n          opacity: calc(\n            0 * var(--x-controls-fade, 1) +\n            1 * (1 - var(--x-controls-fade, 1))\n          );\n        }\n\n        :host::part(controls-panel-body) {\n          display: flex;\n          justify-content: start;\n          align-items: center;\n          margin-left: calc(var(--x-controls-gap, 0.5rem) / 2 * -1);\n          margin-right: calc(var(--x-controls-gap, 0.5rem) / 2 * -1);\n        }\n\n        :host::part(control) {\n          padding-left: calc(var(--x-controls-gap, 0.5rem) / 2);\n          padding-right: calc(var(--x-controls-gap, 0.5rem) / 2);\n          box-sizing: border-box;\n          /* min-height: 1rem; */\n        }\n\n        :host(:state(--nocontrols))::part(overlay-playbutton),\n        :host(:state(--nocontrols))::part(controls-panel) {\n          display: none;\n        }\n\n        :host(:state(--animated))::part(controls-panel) {\n          transition: transform 0.3s ease-in, opacity 0.3s ease-in;\n        }\n\n        :host(:state(--paused))::part(controls-panel) {\n        }\n\n        :host(:state(--fullscreen))::part(controls-panel) {\n        }\n\n        :host(:state(--controlsvisible))::part(controls-panel) {\n          transform: translateY(0);\n          transition-delay: 0.1s;\n          opacity: 1;\n        }\n\n        /* sliders */\n        :host::part(slider) {\n          -webkit-appearance: none;\n          appearance: none;\n          background: transparent;\n          cursor: pointer;\n          display: block;\n          /*width: max-content;\n          flex-grow: 1;\n          flex-shrink: 1; */\n          pointer-events: auto;\n          margin: 0;\n        }\n\n        :host::part(timeline) {\n          min-width: 65px;\n          flex-grow: 1;\n          flex-shrink: 1;\n        }\n\n        ".concat(['-webkit-slider-runnable-track', '-moz-range-track'].map(function (selector) {
+      var html = "\n      <style>\n        :host {\n          --x-controls-padding-x: 14px;\n          --x-controls-padding-y: 12px;\n          --x-controls-gap: 10px;\n          display: contents;\n          position: relative;\n          font-family: var(--x-font-family, sans-serif);\n          font-size: var(--x-font-size, 0.9rem);\n        }\n\n        :host(:state(--fullscreen)) {\n            width: 100vw !important;\n            height: 100vh !important;\n            position: fixed !important;\n            top: 0 !important;\n            left: 0 !important;\n            right: 0 !important;\n            bottom: 0 !important;\n        }\n\n        :host figure {\n          display: flex;\n        }\n\n        :host video::-webkit-media-controls-panel {\n            display: none !important;\n            opacity: 1 !important;\n        }\n\n        :host::part(body) {\n          position: relative;\n          display: flex;\n        }\n\n        :host::part(controls-frame) {\n          position: absolute;\n          top: 0;\n          left: 0;\n          right: 0;\n          bottom: 0;\n          overflow: hidden;\n          pointer-events: none;\n          z-index: 10;\n        }\n\n        /* controls panel */\n        :host::part(controls-panel) {\n          pointer-events: auto;\n          position: absolute;\n          left: 0;\n          right: 0;\n          bottom: 0;\n          /*background: var(--x-controls-bg, color-mix(in srgb, black 45%, transparent));*/\n          background: rgba(from var(--x-controls-bg, black) r g b / var(--x-controls-bg-opacity, 0.55));\n          color: var(--x-controls-color, #fff);\n          transition-delay: 0s;\n          padding: var(--x-controls-padding-y, 0.5rem) var(--x-controls-padding-x, 0.5rem);\n          /*gap: var(--x-controls-gap, 0.5rem);*/\n        }\n\n        :host::part(controls-panel) {\n          transform: translateY(\n            calc(\n              100% * var(--x-controls-slide, 1) +\n              0% * (1 - var(--x-controls-slide, 1))\n            )\n          );\n          opacity: calc(\n            0 * var(--x-controls-fade, 0) +\n            1 * (1 - var(--x-controls-fade, 0))\n          );\n        }\n\n        :host::part(controls-panel-body) {\n          display: flex;\n          justify-content: start;\n          align-items: center;\n          margin-left: calc(var(--x-controls-gap, 0.5rem) / 2 * -1);\n          margin-right: calc(var(--x-controls-gap, 0.5rem) / 2 * -1);\n        }\n\n        :host::part(control) {\n          padding-left: calc(var(--x-controls-gap, 0.5rem) / 2);\n          padding-right: calc(var(--x-controls-gap, 0.5rem) / 2);\n          box-sizing: border-box;\n          /* min-height: 1rem; */\n        }\n\n        :host(:state(--nocontrols))::part(overlay-playbutton),\n        :host(:state(--nocontrols))::part(controls-panel) {\n          display: none;\n        }\n\n        :host(:state(--animated))::part(controls-panel) {\n          transition: transform 0.3s ease-in, opacity 0.3s ease-in;\n        }\n\n        :host(:state(--paused))::part(controls-panel) {\n        }\n\n        :host(:state(--fullscreen))::part(controls-panel) {\n        }\n\n        :host(:state(--controlsvisible))::part(controls-panel) {\n          transform: translateY(0);\n          transition-delay: 0.1s;\n          opacity: 1;\n        }\n\n        /* sliders */\n        :host::part(slider) {\n          -webkit-appearance: none;\n          appearance: none;\n          background: transparent;\n          cursor: pointer;\n          display: block;\n          /*width: max-content;\n          flex-grow: 1;\n          flex-shrink: 1; */\n          pointer-events: auto;\n          margin: 0;\n        }\n\n        :host::part(timeline) {\n          min-width: 65px;\n          flex-grow: 1;\n          flex-shrink: 1;\n        }\n\n        ".concat(['-webkit-slider-runnable-track', '-moz-range-track'].map(function (selector) {
         return "\n          *::".concat(selector, " {\n            width: 100%;\n            height: var(--x-slider-height, 0.5rem);\n            cursor: pointer;\n            box-shadow: var(--x-slider-shadow, inset 0 1px 2px color-mix(in srgb, black 5%, transparent));\n            background: var(--x-slider-bg, color-mix(in srgb, var(--x-controls-color, #fff) 50%, transparent));\n            border-radius: var(--x-slider-radius, 0.5rem);\n            border-width: var(--x-slider-border-width, 0);\n            border-style: var(--x-slider-border-style, solid);\n            border-color: var(--x-slider-border-color, #010101);\n            display: flex;\n          }\n          \n          input[type=range]:focus::").concat(selector, " {\n            /*background: initial;*/\n          }\n        ");
       }).join('\n'), "\n\n        ").concat(['-webkit-slider-thumb', '-moz-range-thumb'].map(function (selector) {
         return "\n          *::".concat(selector, " {\n            -webkit-appearance: none;\n            appearance: none;\n            width: var(--x-slider-thumb-width, 0.5rem); \n            height: var(--x-slider-thumb-height, 0.5rem);\n            border-radius: 50%;\n            background: var(--x-controls-color, #fff);\n            cursor: pointer;\n            margin-top: calc((var(--x-slider-height, 0.5rem) - var(--x-slider-thumb-height, 0.5rem)) / 2);\n          }\n        ");
-      }).join('\n'), "\n\n        /* control buttons */\n        :host::part(control-button) {\n          aspect-ratio: 1;\n          display: flex;\n          justify-content: center;\n          align-items: center;\n          line-height: 1;\n          /* height: 1rem; */\n          box-sizing: content-box;\n          cursor: pointer;\n          pointer-events: auto;\n          font-size: var(--x-icon-size, 24px);\n        }\n\n        :host::part(control-button):before,\n        :host::part(overlay-playbutton):before,\n        :host::part(control-button):after {\n          font-family: var(--x-icon-font-family, monospace);\n          font-weight: var(--x-icon-font-weight, normal);\n          color: var(--x-controls-color, #fff);\n        }\n\n        /* fullscreen button */\n        :host::part(fullscreen-button) {\n          grid-area: fullscreen-button;\n          margin-left: auto;\n        }\n\n        :host::part(fullscreen-button)::before {\n          content: var(--x-icon-expand, '\u26F6');\n          font-family: var(--x-icon-expand-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-expand-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        :host(:state(--fullscreen))::part(fullscreen-button)::before {\n          content: var(--x-icon-collapse, '\u26F6');\n          font-family: var(--x-icon-collapse-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-collapse-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        /* play button */\n        :host::part(play-button) {\n        }\n\n        :host::part(overlay-playbutton):before,\n        :host(:state(--paused))::part(play-button):before {\n          content: var(--x-icon-play, \"\u25B6\");\n          font-family: var(--x-icon-play-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-play-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        :host::part(play-button):before {\n          content: var(--x-icon-pause, '\u23F8');\n          font-family: var(--x-icon-pause-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-pause-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        /* mute button */\n        :host::part(mute-button) {\n          position: relative;\n          /* margin-left: auto; */\n        }\n\n        /* mute button */\n        :host::part(volume-slider) {\n          /* margin-left: auto; */\n        }\n\n        :host::part(mute-button):before {\n          content: var(--x-icon-speaker, \"\\1F50A\");\n          font-family: var(--x-icon-speaker-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-pause-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        :host(:state(--muted))::part(mute-button):after {\n          content: '';\n          display: block;\n          position: absolute;\n          left: auto;\n          top: 0;\n          height: 100%;\n          aspect-ratio: 1;\n          color: red;\n          font-size: 2rem;\n          width: 1rem;\n          background: linear-gradient(to right top, transparent, transparent 40%, #eee 40%, #eee 50%, #333 50%, #333 60%, transparent 60%, transparent);\n        }\n\n        :host::part(time-display) {\n          display: flex;\n          flex-wrap: nowrap;\n          white-space: nowrap;\n        }\n\n        /* duration-display */\n        :host::part(duration) {\n          color: var(--x-muted, color-mix(in srgb, var(--x-controls-color, #fff) 50%, transparent));\n        }\n\n        :host::part(duration)::before {\n          content: ' / ';\n        }\n\n        :host(:where(\n                [controlslist=\"nocurrenttime\"],\n                [controlslist^=\"nocurrenttime \"],\n                [controlslist*=\" nocurrenttime \"],\n                [controlslist$=\" nocurrenttime\"]\n        ))::part(duration)::before {\n          display: none;\n        }\n\n        :host::part(duration):empty {\n          display: none;\n        }\n\n        /* overlay play button */\n        :host::part(overlay-playbutton) {\n          position: absolute;\n          top: 50%;\n          left: 50%;\n          transform: translate(-50%, -50%);\n          transition: all 0.3s ease-in;\n          padding: 1.3rem;\n          font: var(--x-icon-font, monospace);\n          font-size: var(--x-overlay-icon-size, 36px);\n          background: rgba(from var(--x-controls-bg, black) r g b / var(--x-controls-bg-opacity, 0.55));\n          border-radius: 50%;\n          display: flex;\n          justify-content: center;\n          align-items: center;\n          box-sizing: content-box;\n          cursor: pointer;\n          text-align: center;\n          opacity: 0.5;\n          transition: all 0.09s linear;\n          visibility: hidden;\n          aspect-ratio: 1;\n          height: 1em;\n        }\n\n        :host::part(overlay-playbutton)::before {\n          content: var(--x-icon-play, \"\u25B6\");\n          display: block;\n          vertical-align: middle;\n        }\n\n        :host(:state(--canplay):state(--paused):not(:state(--played)))::part(overlay-playbutton) {\n          opacity: 1;\n          transform: translate(-50%, -50%) scale(1);\n          visibility: visible;\n        }\n\n        :host(:state(--played))::part(overlay-playbutton) {\n          opacity: 0;\n          transform: translate(-50%, -50%) scale(2.5);\n          transition: visibility 0s 0.4s, opacity 0.4s ease-out, transform 0.4s ease-in;\n          visibility: hidden;\n          pointer-events: none;\n          cursor: default;\n        }\n\n        /* volume-control */\n        .volume-control {\n          display: flex;\n          align-items: center;\n          position: relative;\n          /*margin-right: 0;*/\n          pointer-events: auto;\n        }\n\n        .mute-button ~ input[type=range] {\n          transition: all 0.2s ease-in;\n          width: 120px;\n        }\n\n        .mute-button {\n          /* outline: 1px solid green !important; */\n        }\n\n        .mute-button ~ input[type=range] {\n          /* outline: 1px solid pink !important; */\n        }\n\n        .mute-button ~ input[type=range] {\n          max-width: calc(\n            var(--x-volume-slider--width, 60px) * var(--x-volume-slider-expand, 1) +\n            0px * (1 - var(--x-volume-slider-expand, 1))\n          );\n          opacity: calc(\n            1 * var(--x-volume-slider-expand, 1) +\n            0 * (1 - var(--x-volume-slider-expand, 1))\n          );;\n          padding-left: calc(\n            0px * var(--x-volume-slider-expand, 1) +\n            var(--x-controls-gap, 0.5rem) / 2 * (1 - var(--x-volume-slider-expand, 1))\n          );\n          padding-right: calc(\n            0px * var(--x-volume-slider-expand, 1) +\n            var(--x-controls-gap, 0.5rem) / 2 * (1 - var(--x-volume-slider-expand, 1))\n          );\n        } \n\n        .mute-button:hover ~ input[type=range],\n        .mute-button ~ input[type=range]:hover {\n          /* outline: 1px solid yellow !important; */\n          opacity: 1;\n          max-width: var(--x-volume-slider--width, 60px);\n          padding-left: 0.5rem;\n        }\n\n        /* controlslist */\n      \n        ").concat(Object.entries({
+      }).join('\n'), "\n\n        /* control buttons */\n        :host::part(control-button) {\n          aspect-ratio: 1;\n          display: flex;\n          justify-content: center;\n          align-items: center;\n          line-height: 1;\n          /* height: 1rem; */\n          box-sizing: content-box;\n          cursor: pointer;\n          pointer-events: auto;\n          font-size: var(--x-icon-size, 24px);\n        }\n\n        :host::part(control-button):before,\n        :host::part(overlay-playbutton):before,\n        :host::part(control-button):after {\n          font-family: var(--x-icon-font-family, monospace);\n          font-weight: var(--x-icon-font-weight, normal);\n          color: var(--x-controls-color, #fff);\n        }\n\n        /* fullscreen button */\n        :host::part(fullscreen-button) {\n          grid-area: fullscreen-button;\n          margin-left: auto;\n        }\n\n        :host::part(fullscreen-button)::before {\n          content: var(--x-icon-expand, '\u26F6');\n          font-family: var(--x-icon-expand-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-expand-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        :host(:state(--fullscreen))::part(fullscreen-button)::before {\n          content: var(--x-icon-collapse, '\u26F6');\n          font-family: var(--x-icon-collapse-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-collapse-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        /* play button */\n        :host::part(play-button) {\n        }\n\n        :host::part(overlay-playbutton):before,\n        :host(:state(--paused))::part(play-button):before {\n          content: var(--x-icon-play, \"\u25B6\");\n          font-family: var(--x-icon-play-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-play-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        :host::part(play-button):before {\n          content: var(--x-icon-pause, '\u23F8');\n          font-family: var(--x-icon-pause-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-pause-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        /* mute button */\n        :host::part(mute-button) {\n          position: relative;\n          /* margin-left: auto; */\n        }\n\n        /* mute button */\n        :host::part(volume-slider) {\n          /* margin-left: auto; */\n        }\n\n        :host::part(mute-button):before {\n          content: var(--x-icon-speaker, \"\\1F50A\");\n          font-family: var(--x-icon-speaker-font-family, var(--x-icon-font-family, monospace));\n          font-weight: var(--x-icon-pause-font-weight, var(--x-icon-font-weight, normal));\n        }\n\n        :host(:state(--muted))::part(mute-button):after {\n          content: '';\n          display: block;\n          position: absolute;\n          left: auto;\n          top: 0;\n          height: 100%;\n          aspect-ratio: 1;\n          color: red;\n          font-size: 2rem;\n          width: 1rem;\n          background: linear-gradient(to right top, transparent, transparent 40%, #eee 40%, #eee 50%, #333 50%, #333 60%, transparent 60%, transparent);\n        }\n\n        :host::part(time-display) {\n          display: flex;\n          flex-wrap: nowrap;\n          white-space: nowrap;\n        }\n\n        /* duration-display */\n        :host::part(duration) {\n          color: var(--x-muted, color-mix(in srgb, var(--x-controls-color, #fff) 50%, transparent));\n        }\n\n        :host::part(duration)::before {\n          content: ' / ';\n        }\n\n        :host::part(duration):empty {\n          display: none;\n        }\n\n        /* overlay play button */\n        :host::part(overlay-playbutton) {\n          position: absolute;\n          top: 50%;\n          left: 50%;\n          transform: translate(-50%, -50%);\n          transition: all 0.3s ease-in;\n          padding: 1.3rem;\n          font: var(--x-icon-font, monospace);\n          font-size: var(--x-overlay-icon-size, 36px);\n          background: rgba(from var(--x-controls-bg, black) r g b / var(--x-controls-bg-opacity, 0.55));\n          border-radius: 50%;\n          display: flex;\n          justify-content: center;\n          align-items: center;\n          box-sizing: content-box;\n          cursor: pointer;\n          text-align: center;\n          opacity: 0.5;\n          transition: all 0.09s linear;\n          visibility: hidden;\n          aspect-ratio: 1;\n          height: 1em;\n        }\n\n        :host::part(overlay-playbutton)::before {\n          content: var(--x-icon-play, \"\u25B6\");\n          display: block;\n          vertical-align: middle;\n        }\n\n        :host(:state(--canplay):state(--paused):not(:state(--played)))::part(overlay-playbutton) {\n          opacity: 1;\n          transform: translate(-50%, -50%) scale(1);\n          visibility: visible;\n        }\n\n        :host(:state(--played))::part(overlay-playbutton) {\n          opacity: 0;\n          transform: translate(-50%, -50%) scale(2.5);\n          transition: visibility 0s 0.4s, opacity 0.4s ease-out, transform 0.4s ease-in;\n          visibility: hidden;\n          pointer-events: none;\n          cursor: default;\n        }\n\n        /* volume-control */\n        .volume-control {\n          display: flex;\n          align-items: center;\n          position: relative;\n          /*margin-right: 0;*/\n          pointer-events: auto;\n        }\n\n        .mute-button ~ input[type=range] {\n          transition: all 0.2s ease-in;\n          width: 120px;\n        }\n\n        .mute-button {\n          /* outline: 1px solid green !important; */\n        }\n\n        .mute-button ~ input[type=range] {\n          /* outline: 1px solid pink !important; */\n        }\n\n        .mute-button ~ input[type=range] {\n          max-width: calc(\n            var(--x-volume-slider--width, 60px) * var(--x-volume-slider-expand, 1) +\n            0px * (1 - var(--x-volume-slider-expand, 1))\n          );\n          opacity: calc(\n            1 * var(--x-volume-slider-expand, 1) +\n            0 * (1 - var(--x-volume-slider-expand, 1))\n          );;\n          padding-left: calc(\n            0px * var(--x-volume-slider-expand, 1) +\n            var(--x-controls-gap, 0.5rem) / 2 * (1 - var(--x-volume-slider-expand, 1))\n          );\n          padding-right: calc(\n            0px * var(--x-volume-slider-expand, 1) +\n            var(--x-controls-gap, 0.5rem) / 2 * (1 - var(--x-volume-slider-expand, 1))\n          );\n        } \n\n        .mute-button:hover ~ input[type=range],\n        .mute-button ~ input[type=range]:hover {\n          /* outline: 1px solid yellow !important; */\n          opacity: 1;\n          max-width: var(--x-volume-slider--width, 60px);\n          padding-left: 0.5rem;\n        }\n\n        /* controlslist */\n        ").concat(Object.entries({
         'play-button': ['noplay', 'noplaybutton'],
         'overlay-playbutton': ['noplay', 'nooverlayplaybutton'],
         'fullscreen-button': ['nofullscreen', 'nofullscreenbutton'],
@@ -521,12 +536,12 @@
           triggers = _ref8[1];
         return "\n            :host(:where(\n              ".concat(triggers.map(function (trigger) {
           return "\n                [controlslist=\"".concat(trigger, "\"],\n                [controlslist^=\"").concat(trigger, " \"],\n                [controlslist*=\" ").concat(trigger, " \"],\n                [controlslist$=\" ").concat(trigger, "\"]\n              ");
-        }).join(',\n'), "\n            ))::part(").concat(part, ") {\n              /*outline: 2px solid blue;*/\n              display: none;\n              /*").concat(triggers.map(function (trigger) {
+        }).join(',\n'), "\n            ):not(:state(--fullscreen)))::part(").concat(part, ") {\n              /*outline: 2px solid blue;*/\n              display: none;\n              /*").concat(triggers.map(function (trigger) {
           return "--x-controlslist--".concat(trigger, ": 1;");
         }).join('\n'), "*/\n            }\n\n            /*\n            :host::part(").concat(part, ") {\n              --x-controlslist--novalue: ").concat(triggers.reduce(function (acc, trigger) {
           return "var(--x-controlslist--".concat(trigger, ", ").concat(acc, ")");
         }, '0'), ";\n              overflow: hidden;\n              max-width: calc(\n                0px * var(--x-controlslist--novalue, 0) +\n                1000px * (1 - var(--x-controlslist--novalue, 0))\n              );\n              padding-left: calc(\n                0px * var(--x-controlslist--novalue, 0) +\n                var(--x-controls-gap, 0.5rem) / 2 * (1 - var(--x-controlslist--novalue, 0))\n              );\n              padding-right: calc(\n                0px * var(--x-controlslist--novalue, 0) +\n                var(--x-controls-gap, 0.5rem) / 2 * (1 - var(--x-controlslist--novalue, 0))\n              );\n              outline: calc(\n                1px * var(--x-controlslist--novalue, 0) +\n                0px * (1 - var(--x-controlslist--novalue, 0))\n              ) solid yellow;\n            }\n              */\n          ");
-      }).join('\n'), "\n\n\n        /*\n        :host([controlslist*=\"nofullscreen\"])::part(fullscreen-button),\n        :host([controlslist*=\"nooverlayplaybutton\"])::part(overlay-playbutton),\n        :host([controlslist*=\"noplaybutton\"])::part(play-button),\n        :host([controlslist*=\"nomutebutton\"])::part(mute-button),\n        :host([controlslist*=\"notimeline\"])::part(timeline),\n        :host([controlslist*=\"noduration\"])::part(duration),\n        :host([controlslist*=\"nocurrenttime\"])::part(current-time),\n        :host([controlslist*=\"novolumeslider\"])::part(volume-slider) {\n          display: none;\n        }\n        \n\n        :host(:where(\n          [controlslist^=\"noplaybutton\"],\n          [controlslist*=\" noplaybutton \"],\n          [controlslist$=\"noplaybutton\"],\n          [controlslist^=\"noplay\"],\n          [controlslist*=\" noplay \"],\n          [controlslist$=\"noplay\"],\n        ))::part(play-button),\n        \n        :host(:where(\n          [controlslist^=\"nooverlayplaybutton\"],\n          [controlslist*=\" nooverlayplaybutton \"],\n          [controlslist$=\"nooverlayplaybutton\"],\n          [controlslist^=\"noplay\"],\n          [controlslist*=\" noplay \"],\n          [controlslist$=\"noplay\"],\n        ))::part(overlay-playbutton),\n\n        :host(:where(\n          [controlslist^=\"nofullscreenbutton\"],\n          [controlslist*=\" nofullscreenbutton \"],\n          [controlslist$=\"nofullscreenbutton\"],\n          [controlslist^=\"nofullscreen\"],\n          [controlslist*=\" nofullscreen \"],\n          [controlslist$=\"nofullscreen\"],\n        ))::part(fullscreen-button),\n\n        :host(:where(\n          [controlslist^=\"nomutebutton\"],\n          [controlslist*=\" nomutebutton \"],\n          [controlslist$=\"nomutebutton\"],\n          [controlslist^=\"novolume\"],\n          [controlslist*=\" novolume \"],\n          [controlslist$=\"novolume\"],\n        ))::part(mute-button),\n\n        :host(:where(\n          [controlslist^=\"novolumeslider\"],\n          [controlslist*=\" novolumeslider \"],\n          [controlslist$=\"novolumeslider\"],\n          [controlslist^=\"novolume\"],\n          [controlslist*=\" novolume \"],\n          [controlslist$=\"novolume\"],\n        ))::part(volume-slider),\n\n        :host(:where(\n          [controlslist^=\"nocurrenttime\"],\n          [controlslist*=\" nocurrenttime \"],\n          [controlslist$=\"nocurrenttime\"],\n          [controlslist^=\"notime\"],\n          [controlslist*=\" notime \"],\n          [controlslist$=\"notime\"],\n        ))::part(current-time),\n\n        :host(:where(\n          [controlslist^=\"noduration\"],\n          [controlslist*=\" noduration \"],\n          [controlslist$=\"noduration\"],\n          [controlslist^=\"notime\"],\n          [controlslist*=\" notime \"],\n          [controlslist$=\"notime\"],\n        ))::part(duration),\n\n        :host(:where(\n          [controlslist^=\"notimeline\"],\n          [controlslist*=\" notimeline \"],\n          [controlslist$=\"notimeline\"],\n          [controlslist^=\"notime\"],\n          [controlslist*=\" notime \"],\n          [controlslist$=\"notime\"],\n        ))::part(timeline)\n        \n        {\n          display: none;\n        }\n\n        :host::part(play-button) {\n          position: relative;\n        }\n\n        :host::part(play-button) {\n          left: calc(\n            1000vw * var(--x-controlslist--noplaybutton, 0) +\n            0vw * (1 - var(--x-controlslist--noplaybutton, 0))\n          );;\n        }\n\n        */\n      </style>\n      <div part=\"body\">\n        <slot></slot>\n        <div part=\"controls-frame\">\n          <div part=\"controls-panel\">\n            <div part=\"controls-panel-body\">\n              <div part=\"control control-button play-button\"></div>\n\n              <input part=\"control slider timeline\" type=\"range\"/>\n              <div part=\"control display current-time\">0:00</div>\n              <div part=\"control display duration\">0:00</div>\n\n              <div class=\"mute-button\" part=\"control control-button mute-button\"></div>\n              <input part=\"control slider volume-slider\" type=\"range\"/>\n              \n              <div part=\"control control-button fullscreen-button\"></div>\n            </div>\n          </div>\n          <div part=\"overlay-playbutton\"></div>\n        </div>\n      </div>\n    ");
+      }).join('\n'), "\n\n        :host(:where(\n          [controlslist=\"nocurrenttime\"],\n          [controlslist^=\"nocurrenttime \"],\n          [controlslist*=\" nocurrenttime \"],\n          [controlslist$=\" nocurrenttime\"]\n        ):not(:state(--fullscreen)))::part(duration)::before {\n          display: none;\n        }\n      </style>\n      <div part=\"body\">\n        <slot></slot>\n        <div part=\"controls-frame\">\n          <div part=\"controls-panel\">\n            <div part=\"controls-panel-body\">\n              <div part=\"control control-button play-button\"></div>\n\n              <input part=\"control slider timeline\" type=\"range\"/>\n              <div part=\"control display current-time\">0:00</div>\n              <div part=\"control display duration\">0:00</div>\n\n              <div class=\"mute-button\" part=\"control control-button mute-button\"></div>\n              <input part=\"control slider volume-slider\" type=\"range\"/>\n              \n              <div part=\"control control-button fullscreen-button\"></div>\n            </div>\n          </div>\n          <div part=\"overlay-playbutton\"></div>\n        </div>\n      </div>\n    ");
       _this.shadowRoot.innerHTML = html;
       _classPrivateFieldSet2(_slot, _this, _this.shadowRoot.querySelector('slot'));
       _classPrivateFieldSet2(_body, _this, _this.shadowRoot.querySelector('[part*="body"]'));
@@ -673,17 +688,6 @@
         this.update();
       }
     }, {
-      key: "toggleFullscreen",
-      value: function toggleFullscreen() {
-        if (!document.fullscreenElement) {
-          _classPrivateFieldGet2(_containerElement, this).requestFullscreen()["catch"](function (err) {
-            alert("Error attempting to enable fullscreen mode: ".concat(err.message, " (").concat(err.name, ")"));
-          });
-        } else {
-          document.exitFullscreen();
-        }
-      }
-    }, {
       key: "handleSlotChange",
       value: function handleSlotChange(event) {
         if (this["for"]) {
@@ -709,11 +713,6 @@
       key: "handleMuteButtonClick",
       value: function handleMuteButtonClick(event) {
         _classPrivateFieldGet2(_mediaElement, this).muted = !_classPrivateFieldGet2(_mediaElement, this).muted;
-      }
-    }, {
-      key: "handleFullscreenButtonClick",
-      value: function handleFullscreenButtonClick(event) {
-        this.toggleFullscreen();
       }
     }, {
       key: "handleElementClick",
@@ -759,8 +758,84 @@
         this.update();
       }
     }, {
+      key: "handleFullscreenButtonClick",
+      value: function handleFullscreenButtonClick(event) {
+        this.toggleFullscreen();
+      }
+    }, {
+      key: "toggleFullscreen",
+      value: function toggleFullscreen() {
+        var fullscreenElement = _assertClassBrand(_MediaControls_brand, this, _getFullscreenElement).call(this);
+        if (!document.fullscreenElement) {
+          fullscreenElement.requestFullscreen();
+        } else {
+          document.exitFullscreen();
+        }
+      }
+    }, {
       key: "handleFullscreenChange",
-      value: function handleFullscreenChange() {
+      value: function handleFullscreenChange(e) {
+        var _this4 = this;
+        var fullscreenElement = _assertClassBrand(_MediaControls_brand, this, _getFullscreenElement).call(this);
+        var isFullscreen = _assertClassBrand(_MediaControls_brand, this, _isFullscreen).call(this);
+        var styleProps = ['--x-controls-slide', '--x-controls-fade', '--x-controls-bg', '--x-controls-bg-opacity', '--x-controls-color'];
+        if (isFullscreen) {
+          fullscreenElement.classList.add(MediaControls.FULLSCREEN_CLASS);
+          [_classPrivateFieldGet2(_containerElement, this), this].forEach(function (el) {
+            var current = el;
+            while (current && current !== fullscreenElement) {
+              current.classList.add(MediaControls.FULLSCREEN_ACTIVE_CLASS);
+              current = current.parentElement;
+            }
+          });
+          _classPrivateFieldGet2(_internals, this).states.add('--fullscreen');
+          if (!this.hasAttribute('data-cached-style')) {
+            var cachedStyle = JSON.stringify(styleProps.reduce(function (acc, key) {
+              acc[key] = _this4.style.getPropertyValue(key);
+              return acc;
+            }, {}));
+            styleProps.forEach(function (key) {
+              _this4.style.removeProperty(key);
+            });
+            this.setAttribute('data-cached-style', cachedStyle);
+          }
+        } else {
+          fullscreenElement.classList.remove(MediaControls.FULLSCREEN_CLASS);
+          fullscreenElement.querySelectorAll(".".concat(MediaControls.FULLSCREEN_ACTIVE_CLASS)).forEach(function (el) {
+            el.classList.remove(MediaControls.FULLSCREEN_ACTIVE_CLASS);
+          });
+          _classPrivateFieldGet2(_internals, this).states["delete"]('--fullscreen');
+          if (this.hasAttribute('data-cached-style')) {
+            var _cachedStyle = JSON.parse(this.getAttribute('data-cached-style'));
+            Object.entries(_cachedStyle).forEach(function (_ref13) {
+              var _ref14 = _slicedToArray(_ref13, 2),
+                key = _ref14[0],
+                value = _ref14[1];
+              _this4.style.setProperty(key, value);
+            });
+            this.removeAttribute('data-cached-style');
+          }
+        }
+        if (isFullscreen && !this.hasAttribute('data-cached-style') || !isFullscreen && this.hasAttribute('data-cached-style')) {
+          if (!this.hasAttribute('data-cached-style')) {
+            var _cachedStyle2 = JSON.stringify(['--x-controls-slide', '--x-controls-fade'].reduce(function (acc, key) {
+              acc[key] = _this4.style.getPropertyValue(key);
+              return acc;
+            }, {}));
+            this.style.removeProperty('--x-controls-slide');
+            this.style.removeProperty('--x-controls-fade');
+            this.setAttribute('data-cached-style', _cachedStyle2);
+          } else {
+            var _cachedStyle3 = JSON.parse(this.getAttribute('data-cached-style'));
+            Object.entries(_cachedStyle3).forEach(function (_ref15) {
+              var _ref16 = _slicedToArray(_ref15, 2),
+                key = _ref16[0],
+                value = _ref16[1];
+              _this4.style.setProperty(key, value);
+            });
+            this.removeAttribute('data-cached-style');
+          }
+        }
         var isAnimated = _classPrivateFieldGet2(_internals, this).states.has('--animated');
         _classPrivateFieldGet2(_internals, this).states["delete"]('--animated');
         this.update();
@@ -804,7 +879,7 @@
     }, {
       key: "handlePointerMove",
       value: function handlePointerMove(event) {
-        var _this4 = this;
+        var _this5 = this;
         if (_classPrivateFieldGet2(_autohideTimeout, this)) {
           clearTimeout(_classPrivateFieldGet2(_autohideTimeout, this));
         }
@@ -818,7 +893,7 @@
           return;
         }
         _classPrivateFieldSet2(_autohideTimeout, this, setTimeout(function () {
-          _classPrivateFieldGet2(_internals, _this4).states["delete"]('--controlsvisible');
+          _classPrivateFieldGet2(_internals, _this5).states["delete"]('--controlsvisible');
         }, MediaControls.CONTROLS_TIMEOUT));
       }
     }, {
@@ -932,14 +1007,10 @@
         _classPrivateFieldGet2(_playButton, this).addEventListener('click', this.handlePlayButtonClick);
         _classPrivateFieldGet2(_muteButton, this).addEventListener('click', this.handleMuteButtonClick);
         _classPrivateFieldGet2(_fullscreenButton, this).addEventListener('click', this.handleFullscreenButtonClick);
-
-        // this.shadowRoot.addEventListener('click', this.handleClick);
-        // this.shadowRoot.addEventListener('dblclick', this.handleDblClick);
-        // this.addEventListener('pointermove', this.handlePointerMove);
-        // this.addEventListener('pointerleave', this.handlePointerLeave);
-
         _classPrivateFieldGet2(_timeline, this).addEventListener('change', this.handleTimelineChange);
         _classPrivateFieldGet2(_volumeSlider, this).addEventListener('change', this.handleVolumeSliderChange);
+        this.addEventListener('pointermove', this.handlePointerMove);
+        this.addEventListener('pointerleave', this.handlePointerLeave);
         this.update();
       }
     }, {
@@ -953,6 +1024,8 @@
         _classPrivateFieldGet2(_fullscreenButton, this).removeEventListener('click', this.handleFullscreenButtonClick);
         _classPrivateFieldGet2(_timeline, this).removeEventListener('change', this.handleTimelineChange);
         _classPrivateFieldGet2(_volumeSlider, this).removeEventListener('change', this.handleVolumeSliderChange);
+        this.removeEventListener('pointermove', this.handlePointerMove);
+        this.removeEventListener('pointerleave', this.handlePointerLeave);
         this.setTargetElement(null);
       }
     }, {
@@ -969,7 +1042,7 @@
     }, {
       key: "hideControls",
       value: function hideControls() {
-        var _this5 = this;
+        var _this6 = this;
         var timeout = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : MediaControls.CONTROLS_TIMEOUT;
         if (_classPrivateFieldGet2(_autohideTimeout, this)) {
           clearTimeout(_classPrivateFieldGet2(_autohideTimeout, this));
@@ -979,8 +1052,8 @@
           return;
         }
         _classPrivateFieldSet2(_autohideTimeout, this, setTimeout(function () {
-          if (!_classPrivateFieldGet2(_mediaElement, _this5).paused) {
-            _classPrivateFieldGet2(_internals, _this5).states["delete"]('--controlsvisible');
+          if (!_classPrivateFieldGet2(_mediaElement, _this6).paused) {
+            _classPrivateFieldGet2(_internals, _this6).states["delete"]('--controlsvisible');
           }
         }, timeout));
       }
@@ -995,7 +1068,6 @@
     }, {
       key: "update",
       value: function update() {
-        var _document$fullscreenE;
         if (!_classPrivateFieldGet2(_containerElement, this)) {
           return;
         }
@@ -1003,16 +1075,10 @@
           return;
         }
         var isPaused = _classPrivateFieldGet2(_mediaElement, this).paused;
-        var isFullscreen = document.fullscreenElement === this || ((_document$fullscreenE = document.fullscreenElement) === null || _document$fullscreenE === void 0 ? void 0 : _document$fullscreenE.contains(this));
         if (isPaused) {
           _classPrivateFieldGet2(_internals, this).states.add('--paused');
         } else {
           _classPrivateFieldGet2(_internals, this).states["delete"]('--paused');
-        }
-        if (isFullscreen) {
-          _classPrivateFieldGet2(_internals, this).states.add('--fullscreen');
-        } else {
-          _classPrivateFieldGet2(_internals, this).states["delete"]('--fullscreen');
         }
         var style = getComputedStyle(_classPrivateFieldGet2(_mediaElement, this));
         _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('border-top-left-radius', style.getPropertyValue('border-top-left-radius'));
@@ -1020,28 +1086,22 @@
         _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('border-bottom-left-radius', style.getPropertyValue('border-bottom-left-radius'));
         _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('border-bottom-right-radius', style.getPropertyValue('border-bottom-right-radius'));
         _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('transform', '');
-        // this.#controlsFrame.style.setProperty('left', '');
-        // this.#controlsFrame.style.setProperty('top', '');
 
-        var isPositionFixed = style.getPropertyValue('position') === 'fixed';
+        // const isPositionFixed = style.getPropertyValue('position') === 'fixed';
+
         var containerBounds = _classPrivateFieldGet2(_containerElement, this).getBoundingClientRect();
-        var mediaElementBounds = !isPositionFixed ? _classPrivateFieldGet2(_mediaElement, this).getBoundingClientRect() : containerBounds;
-        // const mediaElementBounds = this.#mediaElement.getBoundingClientRect();
+        // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : containerBounds;
 
-        // if (this.#for) {
-        // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
-        // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
-        var refBounds = mediaElementBounds;
+        var refBounds = _assertClassBrand(_MediaControls_brand, this, _isFullscreen).call(this) ? document.body.getBoundingClientRect() : containerBounds;
         _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('width', "".concat(refBounds.width, "px"));
         _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('height', "".concat(refBounds.height, "px"));
+        // this.#controlsFrame.style.setProperty('--x-controls-slide', globalStyle.getPropertyValue('--x-controls-slide'));
+        // this.#controlsFrame.style.setProperty('--x-controls-fade', globalStyle.getPropertyValue('--x-controls-fade'));
+
         var targetBounds = _classPrivateFieldGet2(_controlsFrame, this).getBoundingClientRect();
         var top = refBounds.top - targetBounds.top;
         var left = refBounds.left - targetBounds.left;
         _classPrivateFieldGet2(_controlsFrame, this).style.setProperty('transform', "translate(".concat(left, "px, ").concat(top, "px)"));
-        // this.#controlsFrame.style.setProperty('left', left + 'px');
-        // this.#controlsFrame.style.setProperty('top', top + 'px');
-        // }
-
         if (this.controls) {
           _classPrivateFieldGet2(_internals, this).states["delete"]('--nocontrols');
         } else {
@@ -1154,8 +1214,16 @@
       }
     }]);
   }(/*#__PURE__*/_wrapNativeSuper(HTMLElement));
+  function _isFullscreen() {
+    return document.fullscreenElement && (document.fullscreenElement === this || document.fullscreenElement.contains(this));
+  }
+  function _getFullscreenElement() {
+    return this.contains(_classPrivateFieldGet2(_containerElement, this)) ? this : getCommonAncestor(_classPrivateFieldGet2(_containerElement, this), this);
+  }
   _defineProperty(MediaControls, "MEDIA_SELECTOR", 'video, audio');
   _defineProperty(MediaControls, "CONTROLS_TIMEOUT", 3000);
+  _defineProperty(MediaControls, "FULLSCREEN_CLASS", 'mediacontrols-fullscreen-container');
+  _defineProperty(MediaControls, "FULLSCREEN_ACTIVE_CLASS", 'mediacontrols-fullscreen-active');
   customElements.define('x-mediacontrols', MediaControls);
 
 })();

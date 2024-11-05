@@ -1,6 +1,6 @@
 {
   "name": "wp-mediacontrols",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Consistent media controls across browsers",
   "main": "custom-attribute.jsx",
   "scripts": {

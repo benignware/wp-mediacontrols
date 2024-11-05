@@ -1,4 +1,5 @@
 import { MediaControlsList } from './MediaControlsList.mjs';
+import { getCommonAncestor } from './utils';
 
 const formatCurrentTime = (time, duration) => {
   const minutes = Math.floor(time / 60);
@@ -45,6 +46,8 @@ export default class MediaControls extends HTMLElement {
 
   static MEDIA_SELECTOR = 'video, audio';
   static CONTROLS_TIMEOUT = 3000;
+  static FULLSCREEN_CLASS = 'mediacontrols-fullscreen-container';
+  static FULLSCREEN_ACTIVE_CLASS = 'mediacontrols-fullscreen-active';
 
   constructor() {
     super();
@@ -136,7 +139,7 @@ export default class MediaControls extends HTMLElement {
           bottom: 0;
           overflow: hidden;
           pointer-events: none;
-          z-index: 1;
+          z-index: 10;
         }
 
         /* controls panel */
@@ -162,8 +165,8 @@ export default class MediaControls extends HTMLElement {
             )
           );
           opacity: calc(
-            0 * var(--x-controls-fade, 1) +
-            1 * (1 - var(--x-controls-fade, 1))
+            0 * var(--x-controls-fade, 0) +
+            1 * (1 - var(--x-controls-fade, 0))
           );
         }
 
@@ -364,15 +367,6 @@ export default class MediaControls extends HTMLElement {
           content: ' / ';
         }
 
-        :host(:where(
-                [controlslist="nocurrenttime"],
-                [controlslist^="nocurrenttime "],
-                [controlslist*=" nocurrenttime "],
-                [controlslist$=" nocurrenttime"]
-        ))::part(duration)::before {
-          display: none;
-        }
-
         :host::part(duration):empty {
           display: none;
         }
@@ -473,7 +467,6 @@ export default class MediaControls extends HTMLElement {
         }
 
         /* controlslist */
-      
         ${
           Object.entries({
             'play-button': ['noplay', 'noplaybutton'],
@@ -493,7 +486,7 @@ export default class MediaControls extends HTMLElement {
                 [controlslist*=" ${trigger} "],
                 [controlslist$=" ${trigger}"]
               `).join(',\n')}
-            ))::part(${part}) {
+            ):not(:state(--fullscreen)))::part(${part}) {
               /*outline: 2px solid blue;*/
               display: none;
               /*${triggers.map(trigger => `--x-controlslist--${trigger}: 1;`).join('\n')}*/
@@ -524,108 +517,14 @@ export default class MediaControls extends HTMLElement {
           `).join('\n')
         }
 
-
-        /*
-        :host([controlslist*="nofullscreen"])::part(fullscreen-button),
-        :host([controlslist*="nooverlayplaybutton"])::part(overlay-playbutton),
-        :host([controlslist*="noplaybutton"])::part(play-button),
-        :host([controlslist*="nomutebutton"])::part(mute-button),
-        :host([controlslist*="notimeline"])::part(timeline),
-        :host([controlslist*="noduration"])::part(duration),
-        :host([controlslist*="nocurrenttime"])::part(current-time),
-        :host([controlslist*="novolumeslider"])::part(volume-slider) {
-          display: none;
-        }
-        
-
         :host(:where(
-          [controlslist^="noplaybutton"],
-          [controlslist*=" noplaybutton "],
-          [controlslist$="noplaybutton"],
-          [controlslist^="noplay"],
-          [controlslist*=" noplay "],
-          [controlslist$="noplay"],
-        ))::part(play-button),
-        
-        :host(:where(
-          [controlslist^="nooverlayplaybutton"],
-          [controlslist*=" nooverlayplaybutton "],
-          [controlslist$="nooverlayplaybutton"],
-          [controlslist^="noplay"],
-          [controlslist*=" noplay "],
-          [controlslist$="noplay"],
-        ))::part(overlay-playbutton),
-
-        :host(:where(
-          [controlslist^="nofullscreenbutton"],
-          [controlslist*=" nofullscreenbutton "],
-          [controlslist$="nofullscreenbutton"],
-          [controlslist^="nofullscreen"],
-          [controlslist*=" nofullscreen "],
-          [controlslist$="nofullscreen"],
-        ))::part(fullscreen-button),
-
-        :host(:where(
-          [controlslist^="nomutebutton"],
-          [controlslist*=" nomutebutton "],
-          [controlslist$="nomutebutton"],
-          [controlslist^="novolume"],
-          [controlslist*=" novolume "],
-          [controlslist$="novolume"],
-        ))::part(mute-button),
-
-        :host(:where(
-          [controlslist^="novolumeslider"],
-          [controlslist*=" novolumeslider "],
-          [controlslist$="novolumeslider"],
-          [controlslist^="novolume"],
-          [controlslist*=" novolume "],
-          [controlslist$="novolume"],
-        ))::part(volume-slider),
-
-        :host(:where(
-          [controlslist^="nocurrenttime"],
+          [controlslist="nocurrenttime"],
+          [controlslist^="nocurrenttime "],
           [controlslist*=" nocurrenttime "],
-          [controlslist$="nocurrenttime"],
-          [controlslist^="notime"],
-          [controlslist*=" notime "],
-          [controlslist$="notime"],
-        ))::part(current-time),
-
-        :host(:where(
-          [controlslist^="noduration"],
-          [controlslist*=" noduration "],
-          [controlslist$="noduration"],
-          [controlslist^="notime"],
-          [controlslist*=" notime "],
-          [controlslist$="notime"],
-        ))::part(duration),
-
-        :host(:where(
-          [controlslist^="notimeline"],
-          [controlslist*=" notimeline "],
-          [controlslist$="notimeline"],
-          [controlslist^="notime"],
-          [controlslist*=" notime "],
-          [controlslist$="notime"],
-        ))::part(timeline)
-        
-        {
+          [controlslist$=" nocurrenttime"]
+        ):not(:state(--fullscreen)))::part(duration)::before {
           display: none;
         }
-
-        :host::part(play-button) {
-          position: relative;
-        }
-
-        :host::part(play-button) {
-          left: calc(
-            1000vw * var(--x-controlslist--noplaybutton, 0) +
-            0vw * (1 - var(--x-controlslist--noplaybutton, 0))
-          );;
-        }
-
-        */
       </style>
       <div part="body">
         <slot></slot>
@@ -877,18 +776,6 @@ export default class MediaControls extends HTMLElement {
     return this.#mediaElement;
   }
 
-  toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      this.#containerElement.requestFullscreen().catch((err) => {
-        alert(
-          `Error attempting to enable fullscreen mode: ${err.message} (${err.name})`,
-        );
-      });
-    } else {
-      document.exitFullscreen();
-    }
-  }
-
   handleSlotChange(event) {
     if (this.for) {
       return;
@@ -912,10 +799,6 @@ export default class MediaControls extends HTMLElement {
 
   handleMuteButtonClick(event) {
     this.#mediaElement.muted = !this.#mediaElement.muted;
-  }
-
-  handleFullscreenButtonClick(event) {
-    this.toggleFullscreen();
   }
 
   handleElementClick(event) {
@@ -960,7 +843,114 @@ export default class MediaControls extends HTMLElement {
     this.update();
   }
 
-  handleFullscreenChange() {
+  #isFullscreen() {
+    return document.fullscreenElement && (document.fullscreenElement === this || document.fullscreenElement.contains(this));
+  }
+
+  #getFullscreenElement() {
+    return this.contains(this.#containerElement)
+        ? this
+        : getCommonAncestor(this.#containerElement, this);
+  }
+
+  handleFullscreenButtonClick(event) {
+    this.toggleFullscreen();
+  }
+
+  toggleFullscreen() {
+    const fullscreenElement = this.#getFullscreenElement();
+
+    if (!document.fullscreenElement) {
+      fullscreenElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  }
+
+  handleFullscreenChange(e) {
+    const fullscreenElement = this.#getFullscreenElement();
+    const isFullscreen = this.#isFullscreen();
+    const styleProps = [
+      '--x-controls-slide',
+      '--x-controls-fade',
+      '--x-controls-bg',
+      '--x-controls-bg-opacity',
+      '--x-controls-color',
+    ]
+
+    if (isFullscreen) {
+      fullscreenElement.classList.add(MediaControls.FULLSCREEN_CLASS);
+      
+      [this.#containerElement, this].forEach(el => {
+        let current = el;
+        while (current && current !== fullscreenElement) {
+          current.classList.add(MediaControls.FULLSCREEN_ACTIVE_CLASS);
+          current = current.parentElement;
+        }
+      });
+
+      this.#internals.states.add('--fullscreen');
+
+      if (!this.hasAttribute('data-cached-style')) {
+        const cachedStyle = JSON.stringify(
+          styleProps.reduce((acc, key) => {
+            acc[key] = this.style.getPropertyValue(key);
+            return acc;
+          }, {})
+        );
+
+        styleProps.forEach(key => {
+          this.style.removeProperty(key);
+        });
+
+        this.setAttribute('data-cached-style', cachedStyle);
+      }
+    } else {
+      fullscreenElement.classList.remove(MediaControls.FULLSCREEN_CLASS);
+      fullscreenElement.querySelectorAll(`.${MediaControls.FULLSCREEN_ACTIVE_CLASS}`).forEach(el => {
+        el.classList.remove(MediaControls.FULLSCREEN_ACTIVE_CLASS);
+      });
+
+      this.#internals.states.delete('--fullscreen');
+      
+      if (this.hasAttribute('data-cached-style')) {
+        const cachedStyle = JSON.parse(this.getAttribute('data-cached-style'));
+
+        Object.entries(cachedStyle).forEach(([key, value]) => {
+          this.style.setProperty(key, value);
+        });
+
+        this.removeAttribute('data-cached-style');
+      }
+    }
+
+
+    if (
+      isFullscreen && !this.hasAttribute('data-cached-style')
+      || !isFullscreen && this.hasAttribute('data-cached-style')) {
+        if (!this.hasAttribute('data-cached-style')) {
+          const cachedStyle = JSON.stringify(
+            ['--x-controls-slide', '--x-controls-fade'].reduce((acc, key) => {
+              acc[key] = this.style.getPropertyValue(key);
+              return acc;
+            }, {})
+          );
+
+          this.style.removeProperty('--x-controls-slide');
+          this.style.removeProperty('--x-controls-fade');
+
+          this.setAttribute('data-cached-style', cachedStyle);
+        } else {
+          const cachedStyle = JSON.parse(this.getAttribute('data-cached-style'));
+
+          Object.entries(cachedStyle).forEach(([key, value]) => {
+            this.style.setProperty(key, value);
+          });
+
+          this.removeAttribute('data-cached-style');
+        }
+    }
+
     const isAnimated = this.#internals.states.has('--animated');
     this.#internals.states.delete('--animated');
     this.update();
@@ -1148,14 +1138,11 @@ export default class MediaControls extends HTMLElement {
     this.#playButton.addEventListener('click', this.handlePlayButtonClick);
     this.#muteButton.addEventListener('click', this.handleMuteButtonClick);
     this.#fullscreenButton.addEventListener('click', this.handleFullscreenButtonClick);
-
-    // this.shadowRoot.addEventListener('click', this.handleClick);
-    // this.shadowRoot.addEventListener('dblclick', this.handleDblClick);
-    // this.addEventListener('pointermove', this.handlePointerMove);
-    // this.addEventListener('pointerleave', this.handlePointerLeave);
-
     this.#timeline.addEventListener('change', this.handleTimelineChange);
     this.#volumeSlider.addEventListener('change', this.handleVolumeSliderChange);
+
+    this.addEventListener('pointermove', this.handlePointerMove);
+    this.addEventListener('pointerleave', this.handlePointerLeave);
 
     this.update();
   }
@@ -1170,6 +1157,9 @@ export default class MediaControls extends HTMLElement {
     this.#fullscreenButton.removeEventListener('click', this.handleFullscreenButtonClick);
     this.#timeline.removeEventListener('change', this.handleTimelineChange);
     this.#volumeSlider.removeEventListener('change', this.handleVolumeSliderChange);
+
+    this.removeEventListener('pointermove', this.handlePointerMove);
+    this.removeEventListener('pointerleave', this.handlePointerLeave);
 
     this.setTargetElement(null);
   }
@@ -1220,18 +1210,11 @@ export default class MediaControls extends HTMLElement {
     }
 
     const isPaused = this.#mediaElement.paused;
-    const isFullscreen = document.fullscreenElement === this || document.fullscreenElement?.contains(this);
     
     if (isPaused) {
       this.#internals.states.add('--paused');
     } else {
       this.#internals.states.delete('--paused');
-    }
-
-    if (isFullscreen) {
-      this.#internals.states.add('--fullscreen');
-    } else {
-      this.#internals.states.delete('--fullscreen');
     }
 
     const style = getComputedStyle(this.#mediaElement);
@@ -1242,33 +1225,28 @@ export default class MediaControls extends HTMLElement {
     this.#controlsFrame.style.setProperty('border-bottom-right-radius', style.getPropertyValue('border-bottom-right-radius'));
 
     this.#controlsFrame.style.setProperty('transform', '');
-    // this.#controlsFrame.style.setProperty('left', '');
-    // this.#controlsFrame.style.setProperty('top', '');
 
-    const isPositionFixed = style.getPropertyValue('position') === 'fixed';
+    // const isPositionFixed = style.getPropertyValue('position') === 'fixed';
 
     const containerBounds = this.#containerElement.getBoundingClientRect();
-    const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : containerBounds;
-    // const mediaElementBounds = this.#mediaElement.getBoundingClientRect();
+    // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : containerBounds;
+
+    const refBounds = this.#isFullscreen()
+      ? document.body.getBoundingClientRect()
+      : containerBounds;
+
+    this.#controlsFrame.style.setProperty('width', `${refBounds.width}px`);
+    this.#controlsFrame.style.setProperty('height', `${refBounds.height}px`);
+    // this.#controlsFrame.style.setProperty('--x-controls-slide', globalStyle.getPropertyValue('--x-controls-slide'));
+    // this.#controlsFrame.style.setProperty('--x-controls-fade', globalStyle.getPropertyValue('--x-controls-fade'));
 
 
-    // if (this.#for) {
-      // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
-      // const mediaElementBounds = !isPositionFixed ? this.#mediaElement.getBoundingClientRect() : this.getBoundingClientRect();
-      const refBounds = mediaElementBounds;
+    const targetBounds = this.#controlsFrame.getBoundingClientRect();
 
-      this.#controlsFrame.style.setProperty('width', `${refBounds.width}px`);
-      this.#controlsFrame.style.setProperty('height', `${refBounds.height}px`);
+    const top = refBounds.top - targetBounds.top;
+    const left = refBounds.left - targetBounds.left;
 
-      const targetBounds = this.#controlsFrame.getBoundingClientRect();
-
-      const top = refBounds.top - targetBounds.top;
-      const left = refBounds.left - targetBounds.left;
-
-      this.#controlsFrame.style.setProperty('transform', `translate(${left}px, ${top}px)`);
-      // this.#controlsFrame.style.setProperty('left', left + 'px');
-      // this.#controlsFrame.style.setProperty('top', top + 'px');
-    // }
+    this.#controlsFrame.style.setProperty('transform', `translate(${left}px, ${top}px)`);
 
     if (this.controls) {
       this.#internals.states.delete('--nocontrols');
