@@ -848,9 +848,13 @@ export default class MediaControls extends HTMLElement {
   }
 
   #getFullscreenElement() {
-    return this.contains(this.#containerElement)
+    if (!this.#mediaElement) {
+      return null;
+    }
+
+    return this.contains(this.#mediaElement)
         ? this
-        : getCommonAncestor(this.#containerElement, this);
+        : getCommonAncestor(this.#mediaElement, this);
   }
 
   handleFullscreenButtonClick(event) {
@@ -859,6 +863,10 @@ export default class MediaControls extends HTMLElement {
 
   toggleFullscreen() {
     const fullscreenElement = this.#getFullscreenElement();
+
+    if (!fullscreenElement) {
+      return;
+    }
 
     if (!document.fullscreenElement) {
       fullscreenElement.requestFullscreen();
@@ -881,7 +889,7 @@ export default class MediaControls extends HTMLElement {
     if (isFullscreen) {
       fullscreenElement.classList.add(MediaControls.FULLSCREEN_CLASS);
       
-      [this.#containerElement, this].forEach(el => {
+      [this.#mediaElement, this].forEach(el => {
         let current = el;
         while (current && current !== fullscreenElement) {
           current.classList.add(MediaControls.FULLSCREEN_ACTIVE_CLASS);

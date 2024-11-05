@@ -766,6 +766,9 @@
       key: "toggleFullscreen",
       value: function toggleFullscreen() {
         var fullscreenElement = _assertClassBrand(_MediaControls_brand, this, _getFullscreenElement).call(this);
+        if (!fullscreenElement) {
+          return;
+        }
         if (!document.fullscreenElement) {
           fullscreenElement.requestFullscreen();
         } else {
@@ -781,7 +784,7 @@
         var styleProps = ['--x-controls-slide', '--x-controls-fade', '--x-controls-bg', '--x-controls-bg-opacity', '--x-controls-color'];
         if (isFullscreen) {
           fullscreenElement.classList.add(MediaControls.FULLSCREEN_CLASS);
-          [_classPrivateFieldGet2(_containerElement, this), this].forEach(function (el) {
+          [_classPrivateFieldGet2(_mediaElement, this), this].forEach(function (el) {
             var current = el;
             while (current && current !== fullscreenElement) {
               current.classList.add(MediaControls.FULLSCREEN_ACTIVE_CLASS);
@@ -1218,7 +1221,10 @@
     return document.fullscreenElement && (document.fullscreenElement === this || document.fullscreenElement.contains(this));
   }
   function _getFullscreenElement() {
-    return this.contains(_classPrivateFieldGet2(_containerElement, this)) ? this : getCommonAncestor(_classPrivateFieldGet2(_containerElement, this), this);
+    if (!_classPrivateFieldGet2(_mediaElement, this)) {
+      return null;
+    }
+    return this.contains(_classPrivateFieldGet2(_mediaElement, this)) ? this : getCommonAncestor(_classPrivateFieldGet2(_mediaElement, this), this);
   }
   _defineProperty(MediaControls, "MEDIA_SELECTOR", 'video, audio');
   _defineProperty(MediaControls, "CONTROLS_TIMEOUT", 3000);
