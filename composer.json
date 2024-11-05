@@ -70,6 +70,7 @@
     "benignware/agnosticon": ">=0.0.9",
     "wpackagist-plugin/icon-fonts": ">=1.0.0",
     "wpackagist-plugin/instant-images": "^6.1.2",
+    "wpackagist-plugin/video-embed-thumbnail-generator": ">=4.10.2",
     "wpackagist-theme/twentyseventeen": ">=2.9",
     "wpackagist-theme/twentytwentyone": "*",
     "wpackagist-theme/twentytwentytwo": "*",
