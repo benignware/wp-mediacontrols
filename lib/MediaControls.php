@@ -87,9 +87,9 @@ class MediaControls extends PluginBase {
 
         if ($is_supported) {
             if ($block['blockName'] === 'core/cover') {
-                $attrs = $block['attrs'] ?? null;
+                $backgroundType = $block['attrs']['backgroundType'] ?? null;
                 
-                if ($attrs && $attrs['backgroundType'] === 'video') {
+                if ($backgroundType === 'video') {
                     return true;
                 }
 
@@ -164,6 +164,12 @@ class MediaControls extends PluginBase {
         }
     
         $video->setAttribute('controls', $controls);
+
+        $poster = $attrs['poster'] ?? null;
+
+        if ($poster) {
+            $video->setAttribute('poster', $poster);
+        }
         
         $id = $block_element->hasAttribute('id') ? $block_element->getAttribute('id') : uniqid('mediacontrols-');
     
