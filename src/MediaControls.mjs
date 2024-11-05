@@ -341,7 +341,7 @@ export default class MediaControls extends HTMLElement {
           position: absolute;
           left: auto;
           top: 0;
-          height: 1rem;
+          height: 100%;
           aspect-ratio: 1;
           color: red;
           font-size: 2rem;
