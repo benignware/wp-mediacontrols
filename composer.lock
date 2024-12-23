@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4bada33004dba9c61e8a8d4b0563d209",
+    "content-hash": "6328563deaa1f9544f7846cef18e1f44",
     "packages": [
         {
             "name": "composer/installers",
@@ -161,11 +161,11 @@
     "packages-dev": [
         {
             "name": "benignware/agnosticon",
-            "version": "v0.0.9",
+            "version": "v0.0.17",
             "source": {
                 "type": "git",
                 "url": "https://github.com/benignware/wp-agnosticon.git",
-                "reference": "v0.0.9"
+                "reference": "v0.0.17"
             },
             "type": "wordpress-plugin"
         },
@@ -199,15 +199,15 @@
         },
         {
             "name": "wpackagist-plugin/instant-images",
-            "version": "6.1.2",
+            "version": "6.2.3",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/instant-images/",
-                "reference": "tags/6.1.2"
+                "reference": "tags/6.2.3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/instant-images.6.1.2.zip"
+                "url": "https://downloads.wordpress.org/plugin/instant-images.6.2.3.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
@@ -235,15 +235,15 @@
         },
         {
             "name": "wpackagist-theme/twentyseventeen",
-            "version": "3.7",
+            "version": "3.8",
             "source": {
                 "type": "svn",
                 "url": "https://themes.svn.wordpress.org/twentyseventeen/",
-                "reference": "3.7"
+                "reference": "3.8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/theme/twentyseventeen.3.7.zip"
+                "url": "https://downloads.wordpress.org/theme/twentyseventeen.3.8.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
@@ -253,15 +253,15 @@
         },
         {
             "name": "wpackagist-theme/twentytwentyone",
-            "version": "2.3",
+            "version": "2.4",
             "source": {
                 "type": "svn",
                 "url": "https://themes.svn.wordpress.org/twentytwentyone/",
-                "reference": "2.3"
+                "reference": "2.4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/theme/twentytwentyone.2.3.zip"
+                "url": "https://downloads.wordpress.org/theme/twentytwentyone.2.4.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
@@ -271,15 +271,15 @@
         },
         {
             "name": "wpackagist-theme/twentytwentythree",
-            "version": "1.5",
+            "version": "1.6",
             "source": {
                 "type": "svn",
                 "url": "https://themes.svn.wordpress.org/twentytwentythree/",
-                "reference": "1.5"
+                "reference": "1.6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/theme/twentytwentythree.1.5.zip"
+                "url": "https://downloads.wordpress.org/theme/twentytwentythree.1.6.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
@@ -289,15 +289,15 @@
         },
         {
             "name": "wpackagist-theme/twentytwentytwo",
-            "version": "1.8",
+            "version": "1.9",
             "source": {
                 "type": "svn",
                 "url": "https://themes.svn.wordpress.org/twentytwentytwo/",
-                "reference": "1.8"
+                "reference": "1.9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/theme/twentytwentytwo.1.8.zip"
+                "url": "https://downloads.wordpress.org/theme/twentytwentytwo.1.9.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"

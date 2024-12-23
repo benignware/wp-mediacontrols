@@ -40,12 +40,12 @@
     "type": "package",
     "package": {
       "name": "benignware/agnosticon",
-      "version": "v0.0.9",
+      "version": "v0.0.17",
       "type": "wordpress-plugin",
       "source": {
         "type": "git",
         "url": "https://github.com/benignware/wp-agnosticon.git",
-        "reference": "v0.0.9"
+        "reference": "v0.0.17"
       }
     }
   }, {
@@ -67,7 +67,7 @@
   "require-dev": {
     "wptrt/theme-unit-test": "dev-master",
     "benignware/benignware-connect": ">=1.0.4",
-    "benignware/agnosticon": ">=0.0.9",
+    "benignware/agnosticon": ">=0.0.17",
     "wpackagist-plugin/icon-fonts": ">=1.0.0",
     "wpackagist-plugin/instant-images": "^6.1.2",
     "wpackagist-plugin/video-embed-thumbnail-generator": ">=4.10.2",
