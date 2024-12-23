@@ -33,7 +33,7 @@ function get_global_styles($styles) {
         $icon = $result[0] ?? null;
 
         if ($icon) {
-          $styles[$name] = '"' . $icon->char . '"';
+          $styles[$name] = '"\\' . $icon->char . '"';
           $styles[$name . "-font-family"] = $icon->font_family;
           $styles[$name . "-font-weight"] = $icon->font_weight;
         }
