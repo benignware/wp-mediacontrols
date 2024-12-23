@@ -17,6 +17,11 @@ class MediaControls extends PluginBase {
         add_action('enqueue_block_editor_assets', [$this, 'enqueue_block_editor_assets']);
         add_filter('render_block', [$this, 'render_block'], 10, 2);
     }
+
+    public function get_plugin_file() {
+        return dirname(__FILE__) . '/../mediacontrols.php';
+    }
+    
     
     public function enqueue_block_editor_assets() {
         $this->enqueue_script(

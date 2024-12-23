@@ -13,6 +13,11 @@ class Settings extends PluginBase {
       add_action('admin_enqueue_scripts', [$this, 'enqueue_settings_scripts']);
     }
 
+    public function get_plugin_file() {
+        return dirname(__FILE__) . '/../mediacontrols.php';
+    }
+    
+
     public function enqueue_settings_scripts($hook) {
       if ($hook !== 'appearance_page_' . $this->get_plugin_slug() . '-settings') {
           return;
