@@ -8,8 +8,8 @@ class PluginBase {
     private $plugin_schema; // Caches the plugin schema
 
     public function __construct() {
-        add_action('enqueue_block_assets', [$this, 'enqueue_global_styles']);
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_global_styles']);
+        add_action('enqueue_block_assets', [$this, 'enqueue_global_styles', 1]);
+        // add_action('wp_enqueue_scripts', [$this, 'enqueue_global_styles'], 1);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_global_styles']);
     }
     
@@ -83,7 +83,6 @@ class PluginBase {
     
         return $data;
     }
-    
 
     public function get_plugin_slug() {
         $data = $this->get_plugin_data();
@@ -176,7 +175,7 @@ class PluginBase {
         );
     }
 
-    protected function enqueue_style($handle, $url, $deps = [], $in_footer = true) {
+    protected function enqueue_style($handle, $url, $deps = [], $in_footer = false) {
         wp_enqueue_style(
             "{$this->get_plugin_handle()}-{$handle}",
             plugins_url($url, $this->get_plugin_file()),

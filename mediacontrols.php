@@ -4,14 +4,13 @@
  * Plugin URI: https://benignware.com
  * Plugin Slug: mediacontrols
  * Description: Consistent media controls across browsers
- * Version: 0.1.6
+ * Version: 0.1.7
  * Author: Rafael Nowrotek
  * Author URI: https:/benignware.com
  * Network: true
  */
 namespace benignware\wp\mediacontrols;
 
-require plugin_dir_path( __FILE__ ) . 'lib/PluginData.php';
 require plugin_dir_path( __FILE__ ) . 'lib/PluginBase.php';
 require plugin_dir_path( __FILE__ ) . 'lib/Settings.php';
 require plugin_dir_path( __FILE__ ) . 'lib/MediaControls.php';

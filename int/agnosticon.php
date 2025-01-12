@@ -25,16 +25,22 @@ function get_global_styles($styles) {
         }
 
         if ($icon_name === 'speaker') {
-          $query = ['volume-high', 'volume', 'speaker'];
+          $query = ['volume-off', 'volume-high', 'volume', 'speaker'];
         }
 
-        $result = \benignware\wp\agnosticon\get_icons($query);
+        foreach ($query as $querypart) {
+          
+          $result = \benignware\wp\agnosticon\get_icon_meta($querypart);
 
-        $icon = $result[0] ?? null;
+          if (!empty($result)) {
+            $icon = $result;
+            break;
+          }
+        }
 
         if ($icon) {
           $styles[$name] = '"\\' . $icon->char . '"';
-          $styles[$name . "-font-family"] = $icon->font_family;
+          $styles[$name . "-font-family"] = "'$icon->font_family'";
           $styles[$name . "-font-weight"] = $icon->font_weight;
         }
       }

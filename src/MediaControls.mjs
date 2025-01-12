@@ -186,6 +186,7 @@ export default class MediaControls extends HTMLElement {
         }
 
         :host(:state(--nocontrols))::part(overlay-playbutton),
+        :host(:state(--autoplay))::part(overlay-playbutton),
         :host(:state(--nocontrols))::part(controls-panel) {
           display: none;
         }
@@ -275,7 +276,7 @@ export default class MediaControls extends HTMLElement {
           box-sizing: content-box;
           cursor: pointer;
           pointer-events: auto;
-          font-size: var(--x-icon-size, 24px);
+          font-size: var(--x-icon-size, 20px);
         }
 
         :host::part(control-button):before,
@@ -1223,6 +1224,14 @@ export default class MediaControls extends HTMLElement {
       this.#internals.states.add('--paused');
     } else {
       this.#internals.states.delete('--paused');
+    }
+
+    const isAutoPlay = this.#mediaElement.autoplay;
+    
+    if (isAutoPlay) {
+      this.#internals.states.add('--autoplay');
+    } else {
+      this.#internals.states.delete('--autoplay');
     }
 
     const style = getComputedStyle(this.#mediaElement);

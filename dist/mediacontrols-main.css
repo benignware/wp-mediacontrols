@@ -17,7 +17,7 @@
   z-index: 1000;
 }
 
-.mediacontrols-fullscreen-container video {
+.mediacontrols-fullscreen-container .mediacontrols-fullscreen-active video {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;

@@ -34,8 +34,8 @@ class MediaControls extends PluginBase {
 
     // Function to enqueue frontend and editor preview assets
     function enqueue_block_assets() {
-        $this->enqueue_script('main', "dist/{$this->get_plugin_slug()}-main.js", [], true);
-        $this->enqueue_style('main', "dist/{$this->get_plugin_slug()}-main.css");
+        $this->enqueue_script('main', "dist/{$this->get_plugin_slug()}-main.js", [], false);
+        $this->enqueue_style('main', "dist/{$this->get_plugin_slug()}-main.css", [], false);
     }
 
     protected function get_styles($settings = []) {
