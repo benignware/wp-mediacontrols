@@ -200,7 +200,8 @@ class MediaControls extends PluginBase {
         $component->setAttribute('style', $style);
     
         // $block_element->parentNode->insertBefore($component, $block_element);
-        $body->insertBefore($component, $body->firstChild);
+        // $body->insertBefore($component, $body->firstChild);
+        $block_element->parentNode->insertBefore($component, $block_element->nextSibling);
         
         $block_content = $doc->saveHTML();
         $block_content = preg_replace('~(?:<\?[^>]*>|<(?:!DOCTYPE|/?(?:html|body))[^>]*>)\s*~i', '', $block_content);
