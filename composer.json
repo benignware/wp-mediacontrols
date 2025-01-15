@@ -1,6 +1,6 @@
 {
   "name": "benignware/wp-mediacontrols",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "wordpress-plugin",
   "license": "MIT",
   "description": "Consistent media controls across browsers",
@@ -21,6 +21,9 @@
   "repositories": [{
     "type": "composer",
     "url": "https://wpackagist.org"
+  }, {
+    "type": "vcs",
+    "url": "https://github.com/benignware/benignware-installer"
   }, {
     "type": "package",
     "package": {
