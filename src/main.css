@@ -16,6 +16,7 @@
 .mediacontrols-fullscreen-container x-mediacontrols::part(controls-frame) {
   z-index: 1000;
   position: fixed !important;
+  transform: translate(0px, 0px) !important;
 }
 
 .mediacontrols-fullscreen-container .mediacontrols-fullscreen-active video {
