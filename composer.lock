@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5f7d68b21bb6d231422142f6410b3d7e",
+    "content-hash": "e302b7902529efd7d1c9f9181f8b331f",
     "packages": [
         {
             "name": "composer/installers",
@@ -217,15 +217,15 @@
         },
         {
             "name": "wpackagist-plugin/video-embed-thumbnail-generator",
-            "version": "4.10.2",
+            "version": "4.10.3",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/video-embed-thumbnail-generator/",
-                "reference": "tags/4.10.2"
+                "reference": "tags/4.10.3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/video-embed-thumbnail-generator.4.10.2.zip"
+                "url": "https://downloads.wordpress.org/plugin/video-embed-thumbnail-generator.4.10.3.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
@@ -326,6 +326,6 @@
     "platform": {
         "php": ">=5.3.0"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "plugin-api-version": "2.6.0"
 }
