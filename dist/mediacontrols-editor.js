@@ -840,6 +840,9 @@
       if (!isSupportedBlock(props) || !settings) {
         return /*#__PURE__*/React.createElement(BlockListBlock, props);
       }
+      if (!globalSettings.editor) {
+        return /*#__PURE__*/React.createElement(BlockListBlock, props);
+      }
       const wrapperProps = getWrapperProps(props, globalSettings);
       const componentProps = getComponentProps(wrapperProps);
       return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement("x-mediacontrols", _extends({

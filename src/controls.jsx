@@ -196,6 +196,10 @@ const withSettingsStyle = createHigherOrderComponent((BlockListBlock) => {
         return <BlockListBlock {...props} />;
     }
 
+    if (!globalSettings.editor) {
+      return <BlockListBlock {...props} />;
+    }
+
     const wrapperProps = getWrapperProps(props, globalSettings, settings);
     const componentProps = getComponentProps(wrapperProps);
 
