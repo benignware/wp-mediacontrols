@@ -7,7 +7,6 @@
  * Version: 0.1.10
  * Author: Rafael Nowrotek
  * Author URI: https:/benignware.com
- * Network: true
  */
 namespace benignware\wp\mediacontrols;
 
