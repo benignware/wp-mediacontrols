@@ -36,3 +36,13 @@
 .wp-block-cover.has-background-dim:not(.has-background-gradient):before {
   pointer-events: none;
 }
+
+.mediacontrols-media:where(video, audio)::-webkit-media-controls {
+  display: none !important;
+  opacity: 0;
+  appearance: none;
+}
+
+.mediacontrols-media:where(video, audio)::-webkit-media-controls-start-playback-button {
+  display: none !important;
+}

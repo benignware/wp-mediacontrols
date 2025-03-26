@@ -640,6 +640,7 @@
             _classPrivateFieldGet2(_mediaElement, this).removeEventListener('volumechange', this.handleVolumeChange);
             _classPrivateFieldGet2(_mediaElement, this).removeEventListener('click', this.handleElementClick);
             _classPrivateFieldGet2(_mediaElement, this).removeEventListener('dblclick', this.handleElementDblClick);
+            _classPrivateFieldGet2(_mediaElement, this).classList.remove('mediacontrols-media');
             _classPrivateFieldGet2(_elementControlsObserver, this).disconnect();
           }
           _classPrivateFieldSet2(_mediaElement, this, value);
@@ -653,6 +654,7 @@
             _classPrivateFieldGet2(_mediaElement, this).addEventListener('volumechange', this.handleVolumeChange);
             _classPrivateFieldGet2(_mediaElement, this).addEventListener('click', this.handleElementClick);
             _classPrivateFieldGet2(_mediaElement, this).addEventListener('dblclick', this.handleElementDblClick);
+            _classPrivateFieldGet2(_mediaElement, this).classList.add('mediacontrols-media');
             this.handleElementControlsChanged();
 
             // TODO: Make handler an instance method and properly disconnect observer on dispose
@@ -728,7 +730,7 @@
     }, {
       key: "handleElementSingleClick",
       value: function handleElementSingleClick(event) {
-        var noPlay = !this.controls || this.controlslist.has('noplay');
+        var noPlay = !this.controls || this.controlslist.has('noplay') || this.controlslist.has('noplaybutton') && this.controlslist.has('nooverlayplaybutton');
         if (noPlay) {
           return;
         }
@@ -748,6 +750,7 @@
         if (_classPrivateFieldGet2(_mediaElement, this).played.length > 0) {
           _classPrivateFieldGet2(_internals, this).states.add('--played');
         }
+        _classPrivateFieldGet2(_mediaElement, this).controls = false;
         this.hideControls();
         this.update();
       }

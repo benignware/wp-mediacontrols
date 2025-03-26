@@ -140,7 +140,16 @@ class MediaControls extends PluginBase {
     
         $controls = $attrs['controls'] ?? false;
         
-        $control_attrs = ['showPlayButton', 'showTimeline', 'showCurrentTime', 'showDuration', 'showMuteButton', 'showVolumeSlider', 'showFullscreenButton'];
+        $control_attrs = [
+            'showOverlayPlayButton',
+            'showPlayButton',
+            'showTimeline',
+            'showCurrentTime',
+            'showDuration',
+            'showMuteButton',
+            'showVolumeSlider',
+            'showFullscreenButton'
+        ];
         $controlslist = implode(' ', array_map(function($control_attr) {
             return 'no' . strtolower(preg_replace('/^show/', '', $control_attr));
         },  array_filter($control_attrs, function($control_attr) use ($settings) {
@@ -169,6 +178,7 @@ class MediaControls extends PluginBase {
         }
     
         $video->setAttribute('controls', $controls);
+        $video->setAttribute('class', $video->getAttribute('class') . ' mediacontrols-media');
 
         $poster = $attrs['poster'] ?? null;
 

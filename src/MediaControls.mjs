@@ -712,6 +712,7 @@ export default class MediaControls extends HTMLElement {
         this.#mediaElement.removeEventListener('volumechange', this.handleVolumeChange);
         this.#mediaElement.removeEventListener('click', this.handleElementClick);
         this.#mediaElement.removeEventListener('dblclick', this.handleElementDblClick);
+        this.#mediaElement.classList.remove('mediacontrols-media');
 
         this.#elementControlsObserver.disconnect();
       }
@@ -729,6 +730,7 @@ export default class MediaControls extends HTMLElement {
         
         this.#mediaElement.addEventListener('click', this.handleElementClick);
         this.#mediaElement.addEventListener('dblclick', this.handleElementDblClick);
+        this.#mediaElement.classList.add('mediacontrols-media');
 
         this.handleElementControlsChanged();
 
@@ -813,7 +815,9 @@ export default class MediaControls extends HTMLElement {
   }
 
   handleElementSingleClick(event) {
-    const noPlay = !this.controls || this.controlslist.has('noplay');
+    const noPlay = !this.controls
+      || this.controlslist.has('noplay')
+      || this.controlslist.has('noplaybutton') && this.controlslist.has('nooverlayplaybutton');
 
     if (noPlay) {
       return;
@@ -834,6 +838,8 @@ export default class MediaControls extends HTMLElement {
     if (this.#mediaElement.played.length > 0) {
       this.#internals.states.add('--played');
     }
+
+    this.#mediaElement.controls = false;
 
     this.hideControls();
     this.update();

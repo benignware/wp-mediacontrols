@@ -8,6 +8,13 @@
       "default": true,
       "section": "general"
     },
+    "showOverlayPlayButton": {
+      "label": "Overlay Play Button",
+      "type": "boolean",
+      "icon": "play",
+      "default": true,
+      "section": "controls"
+    },
     "showPlayButton": {
       "label": "Play Button",
       "type": "boolean",
